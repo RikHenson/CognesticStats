@@ -9,12 +9,13 @@
 % vectorisation). It was originally written for the MRC CBU's COGNESTIC Summer 
 % School, but can stand-alone.
 % 
-% It starts with sampling theory, central limit thoerem and randomisation testing, 
-% then proceeds to null hypothesis testing (error rate and power), focusing on 
-% T-tests and including Bayes Factors, then moves to the multiple comparison problem, 
-% height and cluster-level family-wise and false-disovery correction, before introducing 
-% the General Linear Model, ANOVAs, F-tests, error nonsphericity, error partitioning, 
-% multiple regression, timeseries, and finishes with Linear Mixed Effects models.
+% It starts with sampling theory, central limit thoerem and randomisation 
+% testing, then proceeds to null hypothesis testing (error rate and power), focusing 
+% on T-tests and including Bayes Factors, then moves to the multiple comparison 
+% problem, height and cluster-level family-wise and false-disovery correction, 
+% before introducing the General Linear Model, ANOVAs, F-tests, error nonsphericity, 
+% error partitioning, multiple regression, timeseries, and finishes with Linear 
+% Mixed Effects models.
 % 
 % Any corrections/comments welcomed. Rik Henson, May 2024. rik.henson@mrc-cbu.cam.ac.uk. 
 % Thanks to Danny Mitchell for comments.
@@ -39,7 +40,7 @@ xlabel('Data value'); ylabel('Proportion')
 %% 
 % Let's pretend we don't know the mean of the population, but want to estimtate 
 % it by drawing a random sample from the population. 
-
+%%
 samp_size = 1e2; % Sample size
 select = ceil(rand(samp_size,1)*pop_size); % random subset of people from population
 samp = pop(select); % their values
@@ -62,14 +63,15 @@ mean_vals = mean(samp);
 figure,bar(vals,pdf),title(fprintf('Distribution of means from %d samples of size %d',num_samp,samp_size))
 xlabel('Estimate of Mean'); ylabel('Proportion')
 fprintf('Std of distribution of means of samples = %4.3f\n',std(mean_vals))
+%% 
+% Note that the std of the distribution of mean estimates ("standard error 
+% of mean") is equal to the std of the population divided by the square-root of 
+% the sample size - something we will come back to later.
 %% Central Limit Theorem
-% Note that the std of the distribution of mean estimates ("standard error of 
-% mean") is equal to the std of the population divided by the square-root of the 
-% sample size - something we will come back to later. Another thing worth noting 
-% about this distribution of mean estimates is that, with big enough sample size, 
-% it will approach a Gaussian distribution, even if the original population distribution 
-% is not Gaussian ("Central Limit Theorem"):
-
+% Another thing worth noting about this distribution of mean estimates is that, 
+% with big enough sample size, it will approach a Gaussian distribution, even 
+% if the original population distribution is not Gaussian ("Central Limit Theorem"):
+%%
 pop2 = pop.^2; % Create a positively skewed distribution
 %pop3 = pop.^3; % Create a positively kurtotic distribution
 pop2 = (pop2 - mean(pop2))/std(pop2); % Reset to have mean of 0 and std of 1 (if were Gaussian!)
@@ -87,8 +89,8 @@ end
 title('Distribution of sample means for different sample sizes')
 legend(compose('%d',samp_size))
 %% 
-% Note that, not only does the spread of the distributions decrease as sample 
-% size increases, but the distributions become more Gaussian (e.g, the distribution 
+% Not only does the spread of the distributions decrease as sample size 
+% increases, but the distributions become more Gaussian (e.g, the distribution 
 % from a sample size of 10 is still skewed, like the native population, but hardly 
 % skewed when sample size is 100).
 %% Randomisation (permutation) testing
@@ -104,7 +106,7 @@ legend(compose('%d',samp_size))
 % of "randomisation" test (also called a "non-parametric" test). If we repeat 
 % this a large number of times, we get an estimate of the distribution of the 
 % mean: 
-
+%%
 samp_size = 100
 one_sample = sample_pop(pop,samp_size,1);
 num_rand = 1e4; % Number of randomisations
@@ -121,12 +123,12 @@ title('Distribution of sample means from randomisation')
 legend({'Rand. Est.','True Mean'})
 fprintf('Std of distribution of means from randomisation = %4.3f\n',std(mean_vals))
 %% 
-% Notice that the standard error of the mean is again close to expected value 
-% of pop_std/sqrt(samp_size). This randomised distribution can be used to calculate 
-% confidence intervals around the mean, e.g, the upper part of the 95% confidence 
-% interval can be obtained by sorting the estimates of the mean from smallest 
-% to largest, and selecting the value just above the 95th percentile (assuming 
-% num_rand>100; see later):
+% Notice that the standard error of the mean is again close to expected 
+% value of pop_std/sqrt(samp_size). This randomised distribution can be used to 
+% calculate confidence intervals around the mean, e.g, the upper part of the 95% 
+% confidence interval can be obtained by sorting the estimates of the mean from 
+% smallest to largest, and selecting the value just above the 95th percentile 
+% (assuming num_rand>100; see later):
 
 mean_vals = sort(mean_vals, 'ascend');
 ci95 = mean_vals(floor(.95*length(mean_vals))+1);
@@ -143,12 +145,12 @@ fprintf('Sample mean is %4.3f with upper 95-percent confidence interval of %4.3f
 % at end of script, which just uses the permutation code above (or other randomisation 
 % method) and returns the proportion of permuted means that are as big, or bigger, 
 % than the actual sample mean:
-
+%%
 p_value = randomise_one_sample(one_sample);
 fprintf('Proportion of randomised means greater than sample mean = %4.3f',p_value);
 %% 
-% Under H0, this proportion is equally likely to lie anywhere between 0 and 
-% 1. This proportion is an estimate of the "p-value":  the probablity of getting 
+% Under H0, this proportion is equally likely to lie anywhere between 0 
+% and 1. This proportion is an estimate of the "p-value":  the probablity of getting 
 % a statistic as large or larger than a critical value, given that H0 is true. 
 % We generally want this p-value to be small, i.e. want minimal risk of falsely 
 % rejecting H0 when it is in fact true. This threshold is called "alpha" and is 
@@ -156,9 +158,9 @@ fprintf('Proportion of randomised means greater than sample mean = %4.3f',p_valu
 % mean is not zero when it is in fact. This is also called the false positive 
 % rate (or "type I error" rate).  
 % 
-% _Interesting factoid: What is the origin of 0.05 for alpha? A story says that 
-% the statistician Sir Ronald Fisher was crossing a court of his Cambridge college 
-% when someone yelled: "What odds would you trust for something not happening 
+% _Interesting factoid: What is the origin of 0.05 for alpha? A story says 
+% that the statistician Sir Ronald Fisher was crossing a court of his Cambridge 
+% college when someone yelled: "What odds would you trust for something not happening 
 % by chance?". Apparently he replied "1 in 20", perhaps without intending that 
 % this should become scientific dogma (though 0.05 was also used in his publications)._
 %% False positive rate and power
@@ -177,11 +179,11 @@ end
 fpr = sum(p_values<alpha)/num_samp;
 fprintf('Randomised (false) positive rate when population has zero-mean = %4.3f',fpr);
 %% 
-% This shows that our permutation test does ensure that only around 5% of experiments 
-% would produce a false positive. 
+% This shows that our permutation test does ensure that only around 5% of 
+% experiments would produce a false positive. 
 % 
-% Note that the resolution of the estimated p-value depends on the number of 
-% random resamples. For example, if num_rand=1e2, then we could only estimate 
+% Note that the resolution of the estimated p-value depends on the number 
+% of random resamples. For example, if num_rand=1e2, then we could only estimate 
 % the p-value to 2 decimal places. In general, a minimum num_rand of 1e4 is recommended. 
 % However, p-value resolution can also be affected by the sample size if the samp_size 
 % is small. For example, if samp_size=10, there are 2^samp_size=1024 possible 
@@ -197,17 +199,17 @@ fprintf('Randomised (false) positive rate when population has zero-mean = %4.3f'
 % 
 % _Exercise: you can check robustness to non-Gaussian populations by replacing 
 % "pop" with "pop2" or "pop3" (for skewed or kurtotic distributions), or try "bootstrap" 
-% as the randomisation method (passing 'bootstrap' as the third argument to randomise_one_sample). 
+% as the randomisation method (passing 'bootstrap' as the third argument randomise_one_sample). 
 % What do you find, particularly when reducing samp_size to ~10? (Note there are 
 % yet other randomisation methods like Jacknife (leave-one-out resampling), but 
 % these are beyond present scope.)_
-%% 
-% But what if our hypothesis is true, and the population mean is greater than 
-% 0? How often does our test detect this? This is called the "power" of a test 
-% (sometimes denoted as 1-beta, given a certain alpha). Let's create a new population 
-% with mean of 0.5 (which corresponds to a Cohen's d effect size of 0.5, since 
-% Cohen's d is mean divided by std, and here std=1):
-
+% 
+% But what if our hypothesis is true, and the population mean is greater 
+% than 0? How often does our test detect this? This is called the "power" of a 
+% test (sometimes denoted as 1-beta, given a certain alpha). Let's create a new 
+% population with mean of 0.5 (which corresponds to a Cohen's d effect size of 
+% 0.5, since Cohen's d is mean divided by std, and here std=1):
+%%
 effect_size = 0.5;          % Effect size for H1
 pop_H1 = pop + effect_size; % (Population if H1 true)
 for s = 1:num_samp
@@ -217,8 +219,8 @@ end
 tpr = sum(p_values<alpha)/num_samp;
 fprintf('Randomised (true) positive rate with population effect size %3.2f = %4.3f',effect_size,tpr);
 %% 
-% This is a power around 70% (normally we aim for >80%). Power increases with 
-% sample_size, as you will see later. 
+% This is a power around 70% (normally we aim for >80%). Power increases 
+% with sample_size, as you will see later. 
 % 
 % Note that there are other classes of non-parametric tests that have analytic 
 % solutions, e.g, those that ignore the magnitude of values and use only their 
@@ -228,15 +230,15 @@ fprintf('Randomised (true) positive rate with population effect size %3.2f = %4.
 % different summary statistics, such as the median, or the T-statistic (below), 
 % or even properties like the maximum or cluster extent (later).
 %% The T-test
-% Next though, we need to introduce the T-test. This test uses a T-statistic 
-% (sometimes called "Student's T") which is defined for one sample as the mean 
-% divided by the standard error of the mean:
-
+% Next though, we introduce the T-test. This test uses a T-statistic (sometimes 
+% called "Student's T") which is defined for one sample as the mean divided by 
+% the standard error of the mean:
+%%
 one_t = @(y) squeeze(mean(y)./(std(y)/sqrt(size(y,1))));
 %% 
-% Some maths can show that, under certain assumptions (that the population is 
-% Gaussian), the T-values under H0 follow a distribution called the T-distribution, 
-% which depends only on the degrees of freedom (df). For this simple case of a 
+% Some maths can show that, under certain assumptions (that the population 
+% is Gaussian), the T-values under H0 follow a distribution called the T-distribution, 
+% which depends also on the degrees of freedom (df). For this simple case of a 
 % one-sample test, the df = samp_size - 1 (the -1 because we have used one df 
 % in our data to estimate the mean). From this, we can calculate the (one-tailed; 
 % see later) probability of obtaining a value of T or higher:
@@ -244,30 +246,31 @@ one_t = @(y) squeeze(mean(y)./(std(y)/sqrt(size(y,1))));
 T2p_higher = @(T,df) squeeze(1-tcdf(T,df));
 
 T  = one_t(samp);   % use last sample from above
-df = samp_size - 1;
-p  = 1-tcdf(T,df); % p-value (use "p" because now parametric)
+df = samp_size - 1; % degrees of freedom
+p  = 1-tcdf(T,df);  % p-value (use "p" because now parametric)
 fprintf('T(%d) = %3.2f, p = %4.3f\n',df,T,p);
 %% 
-% where "tcdf" is the cumultive density function for the T distribution (in 
-% Matlab stats toolbox). 
+% where "tcdf" is the cumultive density function for the T distribution 
+% (in Matlab stats toolbox). For this sample (drawn from a population with mean 
+% of 0.5), we can reject H0 (that population mean is 0) because p<.05.
 % 
-% This is called a "parametric" test, because it depends on a parametric (here 
-% Gaussian) assumption about the distribution of the property under test (here 
-% the mean). According to the CLT shown earlier, this assumption is met when samp_size 
-% is large (in fact, when df is very large, T-distribution becomes Gaussian, and 
-% the p-value is equivalent to that for the Z-statistic, where Z = mean/std). 
+% This is called a "parametric" test, because it depends on a parametric 
+% (here Gaussian) assumption about the distribution of the property under test 
+% (here the mean). According to the CLT shown earlier, this assumption is met 
+% when samp_size is large (in fact, when df is very large, T-distribution becomes 
+% Gaussian, and the p-value is equivalent to that for the Z-statistic, Z = mean/std). 
 % For smaller samples, there are tests to determine whether the sample comes from 
 % a normal distribution, but ironically, the smaller the sample size (and hence 
 % bigger the risk that the assumption of a Gaussian distribution of the mean is 
-% violated), the less sensitive these tests become.
+% violated), the less sensitive such "tests of normality" become.
 % 
 % _Interesting factoid: the "Student" in "Student's T-test" was the pseudonym 
 % of a statistician called Gosset, who worked for Guinness to quality control 
 % batches of beer, and used the pseudonym to avoid the ban of publishing research 
 % that might have commerical implications._
-%% 
+% 
 % We can also check that the T-test controls the FPR and gives similar Power:
-
+%%
 num_samp = 1e4;
 samp = sample_pop(pop, samp_size, num_samp); % Draw num_samp samples of samp_size
 p    = T2p_higher(one_t(samp), samp_size-1);
@@ -280,9 +283,10 @@ tpr  = sum(p<alpha)/num_samp;
 fprintf('True positive rate for T-test under H1 with effect size of %3.2f = %4.3f\n', effect_size, tpr);
 fprintf('(cf. for randomisation test above)');
 %% 
-% (note how much quicker this is than randomisation testing!). However, what 
-% happens when parametric assumptions not met? We can repeat but drawing a large 
-% number of small samples from a non-Gaussian population (eg the skewed "pop2"):
+% (note how much quicker this is than randomisation testing!). However, 
+% what happens when parametric assumptions not met? We can repeat but drawing 
+% a large number of small samples from a non-Gaussian population (eg the skewed 
+% "pop2"):
 
 samp_size = 10
 samp = sample_pop(pop2, samp_size, num_samp); % Draw num_samp samples of samp_size
@@ -290,30 +294,30 @@ p    = T2p_higher(one_t(samp), samp_size-1);
 fpr  = sum(p<alpha)/num_samp;
 fprintf('False positive rate for T-test when H0 true = %4.3f\n', fpr);
 %% 
-% The first thing to note is that the FPR is now less than alpha, i.e., the 
-% T-test has become conservative. This means the test may be less sensitive, but 
-% at least has not increased FPR above an accepted rate (cf. bootstrap tests if 
-% you tried exercise above). 
+% The first thing to note is that the FPR is now less than alpha, i.e., 
+% the T-test has become conservative (ie it "fails to safe"). This means the test 
+% may be less sensitive, but at least has not increased FPR above an accepted 
+% rate (cf. randomisation tests if you tried exercise above). 
 % 
-% So if this one-sample T-test is quite robust, even to small samples, you might 
-% wonder why we bother with permutation tests, given they are computationally 
-% expensive? (though note that are situations in two-sample T-tests where it becomes 
+% So if this one-sample T-test is quite robust, even to small samples, you 
+% might wonder why we bother with permutation tests, given they are computationally 
+% expensive? (though note that are situations in two-sample T-tests where it is 
 % capricious; see later). One reason is that randomisation is more general, in 
 % that we can calculate probabilities for properties other than the mean (such 
 % as the maximum; see later), which may not have a parametric (analytic) solution.
 % 
-% So far, we have been testing H1 that the mean is greater than 0. This is called 
-% a directional or "one-tailed" test. We can also perform a two-tailed test to 
-% ask whether the mean is simply different from 0, by using the absolute value 
-% of T:
+% So far, we have been testing H1 that the mean is greater than 0. This is 
+% called a directional or "one-tailed" test. We can also perform a two-tailed 
+% test to ask whether the mean is simply different from 0, by using the absolute 
+% value of T:
 
 T2p_2tails = @(T,df) squeeze(1-tcdf(abs(T),df));
 %% 
-% Because we are effectively doing two tests now, we can divide our alpha by 
-% 2 (a special case of the Bonferroni correction; see later). 
-%% 
+% Because we are effectively doing two tests now, we can divide our alpha 
+% by 2 (a special case of the Bonferroni correction; see later). 
+% 
 % We can now calculate power curves for a two-tailed, one-sample T-test:
-
+%%
 num_samp = 1e3;
 alpha_cor = alpha/2
 samp_sizes = [10:20:210];
@@ -337,19 +341,19 @@ legend(txt,'Location','East')
 axis([min(samp_sizes)-10 max(samp_sizes)+10 0 1])
 xlabel('Sample Size'); ylabel('Power')
 %% 
-% So for what Cohen called a "medium" effect size of 0.5, you now need a sample 
-% size of ~30 for 80% power (more than earlier because now two-tailed), but for 
-% what he called a "small" effect of 0.2, you need around 200.
+% So for what Cohen called a "medium" effect size of 0.5, you now need a 
+% sample size of ~30 for 80% power (more than earlier because now two-tailed), 
+% but for what he called a "small" effect of 0.2, you need around 200.
 %% Bayes Factors
 % The above classical or "frequentist" statistics estimate the likelihood of 
-% getting a statistic larger than that obtained from the data, given that the 
-% null hypothesis is true. One consequence of this is that, if this p-value does 
-% not fall below our alpha, then we cannot reject H0, but nor can we accept it 
-% ("absence of evidence is not evidence of absence"). A Bayes Factor (BF) on the 
-% other hand is the ratio of two likelihoods: the probability of exceeding that 
-% statistic value if H1 is true, relative to the same probability if H0 is true 
-% (this ratio is often called BF10; while its reciprocal is BF01). A high BF10 
-% (e.g, 6 or 10; a matter of convention like alpha) would constitute evidence 
+% getting a statistic as large or larger than that obtained from the data, given 
+% that the null hypothesis is true. One consequence of this is that, if this p-value 
+% does not fall below our alpha, then we cannot reject H0, but nor can we accept 
+% it ("absence of evidence is not evidence of absence"). A Bayes Factor (BF) on 
+% the other hand is the ratio of two likelihoods: the probability of exceeding 
+% that statistic value if H1 is true, relative to the same probability if H0 is 
+% true (this ratio is often called BF10; while its reciprocal is BF01). A high 
+% BF10 (e.g, 6 or 10; a matter of convention like alpha) would constitute evidence 
 % for H1, whereas a high BF01 (low BF10) would constitute evidence for the null. 
 % Being able to claim support for H0 is a major strength of BFs (there are other 
 % philosophical differences that are beyond the present remit).
@@ -362,29 +366,29 @@ xlabel('Sample Size'); ylabel('Power')
 % likelihood under H1, one needs to impose some priors, and if scientists use 
 % different priors, they could come to different conclusions.
 % 
-% One solution called "subjective priors" is to use priors that come from previous 
-% data or simulations or theory. While other scientists might disagree with these, 
-% they can at least be specified in advance, ideally with agreement from independent 
-% reviewers (eg in a Study Registration). An alternative is to stick with "objective 
-% priors", i.e, default priors that do not differ by experiment, and which the 
-% community agrees in advance (e.g, default priors for a Bayesian T-test). (A 
-% third option is "empirical priors", which arise when we have heirarhical models, 
-% as mentioned later).
+% One solution called "subjective priors" is to use priors that come from 
+% previous data or simulations or theory. While other scientists might disagree 
+% with these, they can at least be specified in advance, ideally with agreement 
+% from independent reviewers (eg in a Study Registration). An alternative is to 
+% stick with "objective priors", i.e, default priors that do not differ by experiment, 
+% and which the community agrees in advance (e.g, default priors for a Bayesian 
+% T-test). (A third option is "empirical priors", which arise when we have heirarhical 
+% models, as mentioned later).
 % 
-% To calculate the likelihood of getting a statistic (here the mean), we need 
-% to parametrise its prior distribution under H0 and H1. The likelihood is then 
-% estimated by integrating over all possible values of these parameters (so-called 
+% To calculate the likelihood of getting a statistic (here the mean), we 
+% need to parametrise its prior distribution under H0 and H1. The likelihood is 
+% then estimated by integrating over all possible values of these parameters (so-called 
 % "marginalisation").
 % 
-% For H0, this is easy, because the prior corresponds to a delta function at 
-% 0. So the likelihood is just the likelihood of getting the actual mean given 
+% For H0, this is easy, because the prior corresponds to a delta function 
+% at 0. So the likelihood is just the likelihood of getting the actual mean given 
 % the standard error of the mean. Under the assumption of a Gaussian distribution 
 % of the population, this is given by the normal probability density function 
 % (PDF):
-
+%%
 likelihood_data = @(y,mu) normpdf(mean(y), mu, std(y)/sqrt(length(y)));
 samp = sample_pop(pop,1e2,1); % a random sample of 100 from unit normal
-likelihood_mean_H0 = likelihood_data(samp,0); % Likelihood of mean under H0
+likelihood_mean_H0 = likelihood_data(samp,0) % Likelihood of mean under H0
 %% 
 % (where likelihood is relative to integral of PDF, so not necessarily between 
 % 0-1). If we also assume a Gaussian distribution for H1, then this is fully described 
@@ -397,22 +401,24 @@ likelihood_mean_H0 = likelihood_data(samp,0); % Likelihood of mean under H0
 H1_mean = 0; H1_std = 0.5;
 prior = @(x) normpdf(x, H1_mean, H1_std);
 marginal = @(x,y) likelihood_data(y,x) .* prior(x);
-likelihood_mean_H1 = integral(@(x) marginal(x,samp), -Inf, Inf);
+likelihood_mean_H1 = integral(@(x) marginal(x,samp), -Inf, Inf)
 %% 
 % BF10 is then just the ratio of these likelihoods:
 
 BF10 = likelihood_mean_H1/likelihood_mean_H0
+BF01 = 1/BF10;
 %% 
-% which will tend to be <1, since the data were sampled from a zero-mean population, 
-% so the BF should favour H0. Note there are other types of BF, for example based 
-% on the T-statistic rather than mean, and which use more sophisticated assumptions 
-% about the distributions of the mean and std, which are beyond present scope 
-% (such as the JZS prior common as the "objective prior" for a T-test). 
-%% 
-% The above process is implemented in the function "one_sample_BF" at end of 
-% this script. We can plot BFs as a function of the effect size in the data and 
-% the variability in the mean allowed by H1:
-
+% which will tend to be <1 (or BF01>1), since the data were sampled from 
+% a zero-mean population, so the BF should favour H0. Note there are other types 
+% of BF, for example based on the T-statistic rather than mean, and which use 
+% more sophisticated assumptions about the distributions of the mean and std, 
+% which are beyond present scope (such as the JZS prior common as the "objective 
+% prior" for a T-test). 
+% 
+% The above process is implemented in the function "one_sample_BF" at end 
+% of this script. We can plot BFs as a function of the effect size in the data 
+% and the variability in the mean allowed by H1:
+%%
 effect_sizes = [0 0.2 0.4 0.6]; % effect sizes in data
 H1_mean = [0 0 0]; H1_std = [0.2 0.4 0.6]; % variability under H1
 num_samp = 1e3;
@@ -443,35 +449,34 @@ legend(txt,'Location','NorthWest')
 set(gca,'XTick',effect_sizes)
 ylabel('Positive Rate'), xlabel('Data effect size')
 %% 
-% The bars are for BFs with different priors for H1std, while the dots are for 
-% frequentist tests of H0. Note that thresholding BFs in the above manner leads 
-% to the NHST notion of (false) positive rates, and many Bayesians prefer to keep 
-% only the BF as a continuous estimate of how much one should update their beliefs 
-% given the data (or prefer to focus on the posterior distributions of the parameters 
-% themselves, which is beyond present remit). Nonetheless, the bars for effect 
-% size = 0 show comparable false positives when there is no effect. Importantly, 
-% when the effect size is 0.2, the power for the BF approach increases as the 
-% prior std for H1 becomes tighter. Even more important however is the positive 
-% rate when the BF favours H0:
+% Note that thresholding BFs in the above manner leads to the NHST notion 
+% of (false) positive rates, and many Bayesians prefer to keep only the BF as 
+% a continuous estimate of how much one should update their beliefs given the 
+% data (or prefer to focus on the posterior distributions of the parameters themselves, 
+% which is beyond present remit). Nonetheless, the bars for effect size = 0 show 
+% comparable false positives when there is no effect. Importantly, when the effect 
+% size is greater than 0, power for the BF approach increases as the prior std 
+% for H1 becomes tighter. Even more important however is the positive rate when 
+% the BF favours H0:
 
 figure, bar(effect_sizes,nr(:,2:end)), title(sprintf('Positive rate for BF10<1/%d',BF10_thr))
 legend(txt{1:(end-1)},'Location','NorthEast'), axis([-0.1 0.7 0 1])
 set(gca,'XTick',effect_sizes)
 ylabel('Positive Rate'), xlabel('Data effect size')
 %% 
-% This is not something we can calculate with a p-value (though classical "equivalence 
-% tests" perform a similar function), but with BFs, we have a reasonable chance 
-% of concluding that the evidence favours the null when the null is true (effect 
-% size is 0). Note that there is also some chance that we will support H0 when 
-% the true effect size is non-zero, but smaller than we expected (i.e, when the 
-% effect size is 0.2 but H1std>0.2). This is not necessarily unreasonable. In 
-% other words, BFs are sensitive to the size of the effect; not just whether it 
-% is present (non-zero) or absent (zero).
+% This is not something we can calculate with a p-value (though classical 
+% "equivalence tests" perform a similar function), but with BFs, we have a reasonable 
+% chance of concluding that the evidence favours the null when the null is true 
+% (effect size is 0). Note that there is also some chance that we will support 
+% H0 when the true effect size is non-zero, but smaller than we expected (i.e, 
+% when the effect size is 0.2 but H1std>0.2). This is not necessarily unreasonable. 
+% In other words, BFs are sensitive to the size of the effect; not just whether 
+% it is present (non-zero) or absent (zero).
 % 
-% _Exercise: what happens if you set prior mean of H1 to be >0, eg H1_mean = 
-% 0.6? You should see more cases when H0 is favoured when the effect size is less 
-% than 0.6 (particularly when H1 std is small, ie when we have more precise expectations 
-% that effect should be 0.6) - understand?_
+% _Exercise: what happens if you set prior mean of H1 to be >0, eg H1_mean 
+% = 0.6? You should see more cases when H0 is favoured when the effect size is 
+% less than 0.6 (particularly when H1 std is small, ie when we have more precise 
+% expectations that effect should be 0.6) - understand?_
 % 
 % Another advantage of using BFs is they naturally allow sequential designs, 
 % where we keep collecting more data until our BF threshold (for H1 or H0) is 
@@ -491,7 +496,8 @@ ylabel('Positive Rate'), xlabel('Data effect size')
 % Let's start by assuming that each test is independent, and H0 is true for 
 % all tests. We now wish to control the "family-wise error rate" (FWE) of at least 
 % one false positive across _all the tests_ (to be less than alpha):
-
+%%
+rng(10)
 samp_size = 20
 num_tests = 50
 num_samp = 1e4;
@@ -508,10 +514,10 @@ axis([0 num_tests+1 0 0.1])
 xlabel('Test number (eg voxel)'); ylabel('Proportion of samples with p<alpha')
 fprintf('Family-wise error rate = %4.3f\n',sum(any(sig,1))/num_samp)
 %% 
-% Although the FPR in each test is around 0.05, the FWE much higher (i.e, it 
-% is likely that at least one test significant every time). One solution is to 
-% scale our threshold by the number of tests - the so-called "Bonferonni" correction:
-
+% Although the FPR in each test is around 0.05, the FWE is much higher (i.e, 
+% it is likely that at least one test significant every time). One solution is 
+% to scale our threshold by the number of tests - the so-called "Bonferonni" correction:
+%%
 alpha_cor = alpha/num_tests % Bonferonni
 sig = (p < alpha_cor);
 figure,bar(sum(sig,2)/num_samp), title('Proportion significant per Test')
@@ -519,16 +525,16 @@ axis([0 num_tests+1 0 0.1])
 xlabel('Test number (eg voxel)'); ylabel('Proportion of samples Bonferonni corrected')
 fprintf('Family-wise error rate = %4.3f\n',sum(any(sig,1))/num_samp)
 %% 
-% _Interesting factoid: Carlo Bonferonni was a keen climber of glaciers, but 
-% we don't know whether he corrected his chance of death by the number of his 
-% climbs._
+% _Interesting factoid: Carlo Bonferonni was a keen climber of glaciers, 
+% but we don't know whether he corrected his chance of death by the number of 
+% his climbs._
 % 
 % This does control FWE at 5%. But in imaging, our tests are rarely independent. 
 % For example, ERP data are temporally autocorrelated across time, while MRI voxels 
 % are typically correlated across space. We can simulate this by smoothing our 
 % data (here with a simple, moving average of all values within a smooth_window 
 % for speed purposes):
-
+%%
 smooth_window = 20
 smooth_y = nan(size(y));
 for s = 1:num_samp
@@ -538,7 +544,7 @@ for s = 1:num_samp
 end
 %% 
 % In this case, Bonferronni correction is too conservative:
-
+%%
 T   = one_t(smooth_y);
 p   = T2p_higher(T,samp_size-1);
 sig = (p < alpha_cor);
@@ -551,7 +557,7 @@ fprintf('Family-wise error rate = %4.3f\n',sum(any(sig,1))/num_samp)
 % calculate the maximum T-value across tests, and its null distribution from permuting 
 % the data many times, then the (1-alpha) percentile of this distribution of "maxT"s 
 % provides a threshold that controls FWE at alpha, as demonstrated below:
-
+%%
 y1 = squeeze(smooth_y(:,:,1)); % Calculate max T thr from one sample (experiment) for speed
 num_rand = 1e4;
 maxT_null = nan(num_rand,1);
@@ -563,10 +569,15 @@ for r = 1:num_rand
 end
 maxT_null = sort(maxT_null,'ascend');
 maxT_thr  = maxT_null(floor((1-alpha)*num_rand)+1)
+[pdf,vals] = hist(maxT_null,100); pdf = pdf/num_samp; figure, bar(vals,pdf)
+hold on, line([maxT_thr maxT_thr],[0 max(pdf)],'Color',[1 0 0])
+title('Null distribution of maximal T-statistic (and 95centile)')
+xlabel('max T'); ylabel('Proportion of permutations')
 %% 
-% (This is the basis of the "permute_maxT_one_sample" function at end of this 
-% script; note that it is important that each permutation is used for all voxels). 
-% Given this threshold for T-values, we can confirm the FWE is around .05: 
+% (This is the basis of the "permute_maxT_one_sample" function at end of 
+% this script; note that it is important that each permutation is used for all 
+% voxels). Given this threshold for T-values, we can confirm the FWE is around 
+% .05: 
 
 sig = (T > maxT_thr);
 figure,bar(sum(sig,2)/num_samp), title('Proportion significant for each test')
@@ -578,9 +589,10 @@ fprintf('Family-wise error rate = %4.3f\n',sum(any(sig,1))/num_samp)
 % but since our simulated experiments are identical, it is quicker to approximate 
 % this threshold for one dataset and apply to all experiments (cf. cluster size 
 % below).
-%% 
-% We can now repeat for the unsmoothed case, confirming we still maintain FWE:
-
+% 
+% We can now repeat for the unsmoothed case, confirming we still maintain 
+% FWE:
+%%
 y1 = squeeze(y(:,:,1)); % Take first experiment to calculate Tthr
 maxT_thr = permute_maxT_one_sample(y1)
 T = one_t(y);
@@ -590,19 +602,19 @@ sig = (T > maxT_thr);
 %xlabel('Test number (eg voxel)'); ylabel('Proportion of samples with p<alpha')
 fprintf('Family-wise error rate = %4.3f\n',sum(any(sig,1))/num_samp)
 %% 
-% Now let's add some signal (to the original unsmoothed data). If consider the 
-% tests as voxels in a 1D image for the moment, let's assume a large but "localised" 
-% effect for voxel index 30, plus a smaller but "distributed" effect across voxels 
-% 10:20 inclusive:
-
+% Now let's add some signal (to the original unsmoothed data). If consider 
+% the tests as voxels in a 1D image for the moment, let's assume a large but "localised" 
+% effect for voxel index 30, plus a smaller but "distributed" effect across 10 
+% voxels from 10:19 inclusive:
+%%
 y_signal = y;
 y_signal(:,30,:)    = y(:,30,:) + 2;
-y_signal(:,10:20,:) = y(:,10:20,:) + 0.5;
+y_signal(:,10:19,:) = y(:,10:19,:) + 0.5;
 y1 = squeeze(y_signal(:,:,1)); % Select example sample (first will do)
 figure,bar(mean(y1)), title('Values for one sample'), xlabel('Voxel Number'), ylabel('Value')
 %% 
 % Let's see what the positive rates look like over lots of experiments:
-
+%%
 maxT_thr = permute_maxT_one_sample(y1)
 T = one_t(y_signal);
 sig = (T > maxT_thr);
@@ -614,7 +626,7 @@ fprintf('Family-wise positive rate = %4.3f\n',sum(any(sig,1))/num_samp)
 % We can detect the localised activation most of the time, but not the diffuse 
 % activation. One solution to the latter is to smooth the data, chosing a smoothing 
 % window that matches the extent of the diffuse cluster:
-
+%%
 smooth_window = 10
 smooth_y_signal = nan(size(y_signal));
 for s = 1:num_samp
@@ -627,10 +639,10 @@ end
 % smooth. One reason for this is to help justify the parametric assumptions of 
 % T-test, because smoothing effectively increases the amount of data being averaged, 
 % and so  benefits from the CLT.
-%% 
+% 
 % So what happens when we apply the same maximum T threshold to the smoothed 
 % data:
-
+%%
 y1 = squeeze(smooth_y_signal(:,:,1));
 maxT_thr = permute_maxT_one_sample(y1)
 T = one_t(smooth_y_signal);
@@ -640,9 +652,9 @@ axis([0 num_tests+1 0 1]) % Note increase in y-axis scale
 xlabel('Voxel number'); ylabel('Proportion of samples with p<alpha')
 %fprintf('Family-wise positive rate = %4.3f\n',sum(any(sig,1))/num_samp)
 %% 
-% You will notice that, while the power to detect voxels in the diffuse cluster 
-% has increased, that for the localised voxel has decreased, and its signal has 
-% in fact been smoothed into nearby voxels.
+% You will notice that, while the power to detect voxels in the diffuse 
+% cluster has increased, that for the localised voxel has decreased, and its signal 
+% has in fact been smoothed into nearby voxels.
 % 
 % _Exercise: compare results with a smaller (eg 5) or bigger (eg 20) smoothing 
 % window (kernel) - do the results support the "matched filter theorem"?_
@@ -658,17 +670,17 @@ xlabel('Voxel number'); ylabel('Proportion of samples with p<alpha')
 % of voxels, and label each voxel with the size of the cluster in which it sits. 
 % This is done by the function "label_with_cluster_size" at end below, but here 
 % is an example:
-
+%%
 y1 = squeeze(mean(y_signal,3)); % mean of many samples of unsmoothed
 cluster_defining_Tval = tinv(1-alpha, samp_size-1) % initial threshold to define clusters
 cs = label_with_cluster_size(one_t(y1), cluster_defining_Tval);
 figure,bar(cs), title('Voxels labelled by cluster size'), xlabel('Voxel Number'), ylabel('Cluster size')
 %% 
-% Note that the diffuse cluster is labelled with true size of 11 (because we 
-% have averaged out most of noise by averaging across many samples), while the 
-% local activation is labelled correctly as size 1 (and there might be additional 
-% spurious clusters, depending on random seed). We can now estimate the distribution 
-% of maximal cluster size: 
+% Note that the diffuse cluster is labelled with true size of 10 (because 
+% we have averaged out most of noise by averaging across many samples), while 
+% the local activation is labelled correctly as size 1 (plus there might be some 
+% false positive clusters). We can now estimate the distribution of maximal cluster 
+% size: 
 
 y1 = squeeze(y_signal(:,:,1));
 cs_null = nan(num_rand,1);
@@ -686,12 +698,12 @@ fprintf('Minimum extent for cluster-level FWE correction: %d\n', cs_thr)
 % function at end). Thus clusters of at least 2 voxels are unlikely by chance. 
 % Note that the initial threshold (here the T-value corresponding to p<.05 uncorrected) 
 % will affect extent threshold.
-%% 
-% With only 50 voxels and hence small range of cluster sizes, we need to lower 
-% the cluster-defining threshold to get sufficient range of cluster sizes. Also, 
-% it is again more accurate to calculate the cs_thr for each sample (experiment), 
+% 
+% With only 50 voxels and hence small range of cluster sizes, we need to 
+% lower the cluster-defining threshold to get sufficient range of cluster sizes. 
+% Also, it is again more accurate to calculate the cs_thr for each sample (experiment), 
 % but for purposes of speed, we estimate from the first sample only:  
-
+%%
 %num_samp = 1e4; % reduce if need to speed up
 cluster_defining_Tval = 0.5 % initial cluster-defining height threshold
 cs = nan(num_samp,num_tests); cs_thr = [];
@@ -710,14 +722,15 @@ figure,bar(sum(cs)/num_samp), title('Proportion significant using cluster-thresh
 xlabel('Voxel Number'), ylabel('Proportion of samples'), axis([0 num_tests+1 0 1])
 fprintf('Family-wise positive rate using Cluster-threshold = %4.3f\n',sum(any(cs,2))/num_samp)
 %% 
-% Notice that the diffuse cluster is now detected reasonably well, but the localised 
-% one is not (cf. the case for corrected peak threshold earlier). We are basically 
-% trading-off statistical sensitivity for localising power: with the cluster-level 
-% correction, we are more sensitive (to clusters), but are unable to localise 
-% within clusters (ie cannot claim a particular voxel within a cluster is significant). 
+% Notice that the diffuse cluster is now detected reasonably well, but the 
+% localised one is not (cf. the case for corrected peak threshold earlier). We 
+% are basically trading-off statistical sensitivity for localising power: with 
+% the cluster-level correction, we are more sensitive (to clusters), but are unable 
+% to localise within clusters (ie cannot claim a particular voxel within a cluster 
+% is significant). 
 % 
-% _Exercise: Here we have applied to the unsmoothed data with signal, but you 
-% can see what happens for the smoothed data, smooth_y_signal, or the unsmoothed 
+% _Exercise: Here we have applied to the unsmoothed data with signal, but 
+% you can see what happens for the smoothed data, smooth_y_signal, or the unsmoothed 
 % data with no signal, y (to check FWE), and what happens as you change the initial 
 % cluster-defining height threshold. You can also compare results when the threshold 
 % is calculated for each sample separately (by uncommenting "else" part above), 
@@ -729,16 +742,16 @@ fprintf('Family-wise positive rate using Cluster-threshold = %4.3f\n',sum(any(cs
 % more assumptions, such as requiring data to have a minimal smoothness, and a 
 % sufficiently stringent initial threshold for defining cluster size.
 %% Threshold-free Cluster Enhancement
-% Given that, how about permuting a property that includes a contribution from 
-% both the height and extent of each cluster, such as the cluster "mass" (e.g, 
-% the product of height and extent of each cluster in the current 1D example)? 
-% Note also that the results from the above cluster-level correction still depend 
-% on the initial height threshold that defines the clusters. A popular method 
-% that combines these ideas is the "Threshold-free Cluster Enhancement" (TFCE), 
-% which integrates the cluster masses across a range of thresholds, and is implemented 
+% Finally, one could permute a property that includes a contribution from both 
+% the height and extent of each cluster, such as the cluster "mass" (e.g, the 
+% product of height and extent of each cluster in the current 1D example). Note 
+% also that the results from the above cluster-level correction still depend on 
+% the initial height threshold that defines the clusters. A popular method that 
+% combines these ideas is the "Threshold-free Cluster Enhancement" (TFCE), which 
+% integrates the cluster masses across a range of thresholds, and is implemented 
 % in the "label_with_cluster_TFCE" function at end (with also allows different 
 % weightings of height and extent).
-
+%%
 cm = nan(num_samp,num_tests); cm_thr = []; % cm = cluster mass
 for s = 1:num_samp
     ys = squeeze(y_signal(:,:,s));
@@ -765,7 +778,7 @@ fprintf('Family-wise positive rate using TFCE-threshold = %4.3f\n',sum(any(cm,2)
 % version of FDR, the p-values are sorted from smallest to largest, and checked 
 % against thresholds with decreasing levels of correction, and then all p-values 
 % up to the largest that survives this threshold are declared significant ("discoveries"). 
-
+%%
 %y1  = squeeze(smooth_y_signal(:,:,1)); % Select one sample for illustration
 %y1  = squeeze(smooth_y(:,:,1));    % No true positives
 %y1  = squeeze(smooth_y(:,:,1))+10; % All true positives
@@ -784,12 +797,12 @@ axis([1 num_tests log10(min([ps thr]))-0.1 0])
 legend({'p-values', 'thresholds','FDR threshold'},'Location','SouthEast')
 fprintf('Number of discoveries = %d\n',length(st))
 %% 
-% Note that FDR defaults to Bonferroni if there are no true positives, and defaults 
-% to uncorrected alpha if they are all true positives.
-%% 
+% Not that FDR defaults to Bonferroni if there are no true positives, and 
+% defaults to uncorrected alpha if they are all true positives.
+% 
 % FDR is compared with FWE in the example below, where signal is put in first 
 % 40 voxels but not the remaining 10: 
-
+%%
 y_signal = y;
 y_signal(:,[1:40],:) = y_signal(:,[1:40],:) + 1; % Add signal to first 40 voxels
 % FWE
@@ -814,10 +827,10 @@ axis([0 num_tests+1 0 1])
 xlabel('Voxel number'); ylabel('Discovery rate per voxel')
 fprintf('Mean error rate in non-active voxels under FDR = %4.3f\n',sum(any(sig(:,41:end),2))/num_samp)
 %% 
-% Note FDR leads to more true positives for the first 40 voxels. However, this 
-% comes at the cost of increased false positives in non-active voxels (the remaining 
-% 10 voxels). This is because FDR controls the number of false positives as a 
-% proportion (eg 5%) of voxels declared significant, rather than as a proportion 
+% Note FDR leads to more true positives for the first 40 voxels. However, 
+% this comes at the cost of increased false positives in non-active voxels (the 
+% remaining 10 voxels). This is because FDR controls the number of false positives 
+% as a proportion (eg 5%) of voxels declared significant, rather than as a proportion 
 % of tests performed (like FWE). So the more active voxels there are in one part 
 % of the image, the more false positives are likely in other parts of the image 
 % where there is no signal. Thus it is really a qualitatively different type of 
@@ -830,20 +843,20 @@ fprintf('Mean error rate in non-active voxels under FDR = %4.3f\n',sum(any(sig(:
 % sensitive "multivariate" tests like PLS/CCA that leverage on covariance between 
 % tests.
 %% Two-sample Tests
-% We now turn to two-sample tests. Here H0 is often that the means of (whatever 
-% generated) two samples are equal. We start with the easy case of a "paired" 
-% test, where two "conditions" are measured on the same people, i.e., each person 
-% contributes two values (sometimes called a "repeated measure"). In this case, 
-% we can simply calculate the difference between these two values for each person, 
-% and run a one-sample test on these "difference scores". In the context of a 
-% permutation test, we would be randomly swapping the two values for each person, 
-% hence the basis for randomising the sign of the (difference) values in the one-sample 
+% We now turn to two-sample tests. Here H0 is that the means of (whatever generated) 
+% two samples are equal. We start with the easy case of a "paired" test, where 
+% two "conditions" are measured on the same people, i.e., each person contributes 
+% two values (sometimes called a "repeated measure"). In this case, we can simply 
+% calculate the difference between these two values for each person, and run a 
+% one-sample test on these "difference scores". In the context of a permutation 
+% test, we would be randomly swapping the two values for each person, hence the 
+% basis for randomising the sign of the (difference) values in the one-sample 
 % test examples above.
 % 
-% More interesting is the "unpaired" (or "independent samples") case, when the 
-% samples (groups) are drawn from two populations of different people, and we 
-% have one value per person. Under H0 that these populations are identical, we 
-% could randomly assign people to either group. This is called "exchangeability"; 
+% More interesting is the "unpaired" (or "independent samples") case, when 
+% the samples (groups) are drawn from two populations of different people, and 
+% we have one value per person. Under H0 that these populations are identical, 
+% we could randomly assign people to either group. This is called "exchangeability"; 
 % in the unpaired case, all values are exchangeable, whereas in the paired case, 
 % only values within the same person are exchangeable (exchangeability is normally 
 % a condition of randomisation tests). If there are N1 people in sample of first 
@@ -852,10 +865,10 @@ fprintf('Mean error rate in non-active voxels under FDR = %4.3f\n',sum(any(sig(:
 % increase. Nonetheless, it is normally sufficient to sample ~1e4 to estimate 
 % a p-value, as done in the function "randomise_two_samples" function at end. 
 % 
-% Alternatively, we can also use a parametric approach. There are several versions 
-% of the parametric version of the two-sample T-test, but we can start with a 
-% standard one that assumes equal variance in both groups:
-
+% Alternatively, we can also use a parametric approach. There are several 
+% versions of the parametric version of the two-sample T-test, but we can start 
+% with a standard one that assumes equal variance in both groups:
+%%
 pool_var = @(y) ((size(y{1},1)-1)*var(y{1}) + (size(y{2},1)-1)*var(y{2})) / (size(y{1},1) + size(y{2},1) - 2)
 two_t = @(y) (mean(y{2}) - mean(y{1})) ./ sqrt(pool_var(y) * (1/size(y{1},1) + 1/size(y{2},1)))
 %% 
@@ -865,11 +878,11 @@ two_t = @(y) (mean(y{2}) - mean(y{1})) ./ sqrt(pool_var(y) * (1/size(y{1},1) + 1
 % of group means, while the denominator is equivalent to the pooled standard error. 
 % The p-value can then be calculated from the same T-distribution with dfs equal 
 % to the total number across both groups minus 2 (the 2 dfs used for estimating 
-% mean within each group).
-%% 
+% the mean within each group).
+% 
 % Assuming equal group sizes, we can plot power curves for two-tailed, unpaired 
 % T-tests as a function of group sizes:
-
+%%
 %num_samp = 1e3; % Reduce if doing randomisation below and want to save time
 alpha_cor    = alpha/2; % Two-tailed
 samp_sizes   = [10:20:210]; % Number of participants per group
@@ -896,23 +909,24 @@ legend(txt,'Location','SouthEast')
 axis([min(samp_sizes)-10 max(samp_sizes)+10 0 1])
 xlabel('Sample Size in each group'); ylabel('Power')
 %% 
-% Note that groups of ~70 are needed to get 80% power with a medium effect size, 
-% which means testing 140 people in total. This is quite a bit more than the ~30 
-% needed for the one-sample test above (which is equivalent to a paired, two-sample 
-% T-test, demonstrating the increased power of repeated-measures designs). Note 
-% also that many imaging studies use relatively small samples of ~20 when comparing 
-% groups, which would entail power of only ~30%...
+% Note that groups of ~70 are needed to get 80% power with a medium effect 
+% size, which means testing 140 people in total. This is quite a bit more than 
+% the ~30 needed for the one-sample test above (which is equivalent to a paired, 
+% two-sample T-test, demonstrating the increased power of repeated-measures designs). 
+% Note also that many imaging studies use relatively small samples of ~20 when 
+% comparing groups, which would entail power of only ~30%...
 % 
-% _Exercise: Calculate power curves after controlling FWE across a large number 
-% of tests. Imagine for example you have an fMRI study with 1e6 voxels (and no 
-% a priori idea where you might find an effect): even allowing for an intrinsic 
-% smoothness in the data (such that you might only have 1e3 "resels" - "resolvable 
-% elements" - for Bonferonni correction), what are chances of traditional fMRI 
-% group sizes finding a true effect somewhere in the brain while controlling FWE?_
+% _Exercise: Calculate power curves after controlling FWE across a large 
+% number of tests. Imagine for example you have an fMRI study with 1e6 voxels 
+% (and no a priori idea where you might find an effect): even allowing for an 
+% intrinsic smoothness in the data (such that you might only have 1e3 "resels" 
+% - "resolvable elements" - for Bonferonni correction), what are chances of traditional 
+% fMRI group sizes finding a true effect somewhere in the brain while controlling 
+% FWE?_
 %% Unequal group sizes and pooled variance estimates
 % We can also plot what happens when the total number of participants is fixed, 
 % but the ratio of group sizes varies:
-
+%%
 %num_samp = 1e3; % Reduce if doing randomisation below and want to save time
 totsamp_size = 50;
 df = totsamp_size - 2;
@@ -940,23 +954,22 @@ legend(txt,'Location','NorthWest')
 axis([0.05 0.55 0 1])
 xlabel('Proportion of total sample in Group 1'); ylabel('Power')
 %% 
-% Note that power decreases as the groups become more unbalanced (though FPR 
-% is still controlled). 
+% Note that power decreases as the groups become more unbalanced (though 
+% FPR is still controlled). 
 %% Inhomogeniety of variance: correcting dfs (Welch)
 % However the variance pooling used by the standard T-test fails when the variance 
 % of one group differs from the other. Such "inhomogeniety" of variance is a special 
 % case of the more general problem of "nonpshericity" discussed in the GLM section 
 % below. 
 % 
-% Indeed, the combination of unequal variance and unequal group sizes, is particularly 
-% serious for the standard T-test, leading to an inflated FPR (particularly given 
-% that tests for whether variances differ again become useless for small samples). 
-% One solution is called Welch's T-test, which does not pool the variance, and 
-% reduces the dfs to a fraction of original dfs (an example of Sattherthwaite 
-% approximation, which we will return to with GLM below). This is illustrated 
-% in the simulations below:
-
-rng(1,'twister'); % Initialise random seed
+% Indeed, the combination of unequal variance and unequal group sizes is 
+% particularly serious for the standard T-test, and can lead to an inflated FPR, 
+% as we will see below. One solution is called Welch's T-test, which does not 
+% pool the variance, and reduces the dfs to a fraction of original dfs (an example 
+% of Sattherthwaite approximation, to which we will return in the GLM section 
+% below). This correction is illustrated in the simulations below:
+%%
+rng(1) % reset seed to get same results
 samp_sizes = [5 45];  % At least one small group
 diff_means = [0 0.8]; % Difference in means
 var_ratios = [0.5 1 2]; % Ratio of variances in Group 2 vs Group 1
@@ -996,26 +1009,25 @@ axis([0.05 2.55 0 0.8])
 set(gca,'XTick',var_ratios)
 xlabel('Ratio of Variance Group 2:Group 1'); ylabel('Power')
 %% 
-% When there is no effect, the FPR for the pooled T-test is too high when the 
-% smaller group is more variable, and too low when the larger group is more variable, 
-% whereas the Welch correction (notice the reduced, fractional dfs) maintains 
-% FPR at correct alpha level in all cases. There is a price of this correction 
-% though: when variances are homogeneous (ratio of 1), the power to detect a true 
-% effect is reduced with the Welch correction (i.e, it is conservative). 
+% When there is no effect, the FPR for the pooled T-test is too high when 
+% the smaller group is more variable, and too low when the larger group is more 
+% variable, whereas the Welch correction (notice the reduced, fractional dfs) 
+% maintains FPR at correct alpha level in all cases. There is a price of this 
+% correction though: when variances are homogeneous (ratio of 1), the power to 
+% detect a true effect is reduced with the Welch correction (i.e, it is conservative). 
 %% The General Linear Model (GLM)
 % The T-test is a special case of the General Linear Model (GLM). The GLM is 
-% normally expressed as *y = XB+e*, where *y* is a vector of all data (concatenated 
+% normally expressed as *y = XB+e*, where *y *is a vector of all data (concatenated 
 % across groups), *X* is a matrix ("design matrix") that specifies the model of 
 % the data, *B* ("Betas") is a vector of the model parameters to be estimated, 
-% and *e* is random error, assumed to be drawn independently from a zero-mean 
+% and *e *is random error, assumed to be drawn independently from a zero-mean 
 % Gaussian (with std estimated when GLM is fit). It can also be written as a set 
 % of simultaneous equations y_i = x_i1 x B1 + x_i2 x B2... + e_i, for ith observation. 
 % Note that, for a unique solution, there should be more datapoints than predictors 
 % in the model, i.e. X is a "tall" matrix with more rows than columns.
 %% GLM for unpaired T-test
 % So if we stick with the example of a two-sample, unpaired T-test:
-
-rng(1,'twister'); % Initialise random seed
+%%
 N = [10 30]; yg = {};
 yg{1} = sample_pop(pop, N(1), 1);
 yg{2} = sample_pop(pop, N(2), 1) + 0.5; % shorthand to add a signal
@@ -1025,22 +1037,26 @@ figure, colormap('gray'),
 subplot(1,2,1), imagesc(y), title('Data in y'), set(gca,'Xtick',[])
 subplot(1,2,2), imagesc(X), title('Design matrix (X) for unpaired T-test'), set(gca,'Xtick',[])
 %% 
-% The first column of X is a binary, indicator variable that codes which data 
-% points come from Group 1, while the second column codes which are from Group 
-% 2.
-%% 
-% This model can be fit to the data by minimising the squared residuals - so 
-% called "ordinary least squares" (OLS) estimation. Some simple maths shows that 
-% this implies that the parameters can be estimated by multiplying the data by 
-% the (pseudo)inverse of the design matrix:
-
+% The first column of X is a binary, indicator variable that codes which 
+% data points come from Group 1, while the second column codes which are from 
+% Group 2.
+% 
+% This model can be fit to the data by minimising the squared residuals - 
+% so called "ordinary least squares" (OLS) estimation. Some simple maths shows 
+% that this implies that the parameters can be estimated by multiplying the data 
+% by the (pseudo)inverse of the design matrix:
+%%
 B = pinv(X)*y; % OLS estimate of Betas
 fprintf('Parameter (Beta) estimates = %s\n',num2str(B'))
 %% 
-% where B are estimates of the true parameters. If you examine pinv(X), you'll 
-% see that it is just estimating the mean for each group in this case. We can 
-% then reconstruct the model fit, the residuals, and estimate the std of the error, 
-% given the df:
+% where B are estimates of the true parameters. If you examine pinv(X), 
+% you'll see that it is just estimating the mean for each group in this case. 
+% (Technically one should pre-multiply y by inv(X'*X)*X' - an expression derived 
+% from minimising e^2 with respect to B; hence the "least squares" solution - 
+% but pinv(X) is more robust for rank-deficient matrices.) 
+% 
+% We can then reconstruct the model fit, the residuals, and estimate the 
+% std of the error, given the df:
 
 Y = X*B;    % Reconstruct fitted response
 r = y - Y;  % Residuals
@@ -1050,17 +1066,17 @@ df = length(y) - rank(X)
 sigma = r'*r / df;
 fprintf('Estimated std of error = %3.2f\n',sigma)
 %% 
-% (The above code is part of "glm_fit" function at end.) In the case of independent 
-% data, the df is the number of data points minus the number of unique parameters 
-% estimated, where the latter is the rank of X (the rank equals number of columns 
-% in X provided the columns are linearly independent).
-%% 
+% (The above code is part of "glm_fit" function at end.) In the case of 
+% independent data, the df is the number of data points minus the number of unique 
+% parameters estimated, where the latter is the rank of X (the rank is a matrix 
+% is the number of linearly independent columns).
+% 
 % Having fit the model (and checked the residuals are consistent with assumptions 
 % of Gaussian error), we can construct statistics like a T-value, by specifying 
 % a "contrast". A contrast is a linear weighting of the parameter estimates, e.g, 
 % to test that the mean of Group 2 is bigger than that of Group 1, the contrast 
-% would be the row vector c = [-1 1].
-
+% would be the vector c = [-1 1].
+%%
 c = [-1 1]; % Directional T-contrast testing Group 2 mean bigger than Group 1 mean
 T = c*B / sqrt(sigma*c*pinv(X'*X)*c'); % Equation for T-value
 p = T2p_higher(T,df);
@@ -1068,56 +1084,56 @@ fprintf('P-value from GLM = %4.3f\n',p)
 p = T2p_higher(two_sample_T(yg,'pooled'),df);
 fprintf('P-value from above T-test = %4.3f\n',p)
 %% 
-% You can see the p-values are identical. Although the equation for the T value 
-% looks scary, it is generalising ideas above. The above code is part of "glm_con" 
-% function at end (while the function "glm" simply calls "glm_fit" followed by 
-% "glm_con").
-%% 
+% You can see the p-values are identical. Although the equation for the 
+% T value looks scary, it is generalising ideas above. The above code is part 
+% of "glm_con" function at end (while the function "glm" simply calls "glm_fit" 
+% followed by "glm_con").
+% 
 % There are a few more things useful to know about the GLM. Firstly, we nearly 
 % always include a constant term in X, which removes the grand-mean across all 
 % datapoints. If we add this to our model, note that the dfs do not change, because 
 % this new third column is the sum of the first two (ie linearly dependent, ie 
-% rank of X is still 2, despite its 3 columns). Thus we get the same p-value:
-
+% rank of X is still 2, despite its 3 columns). Thus we get the same T-statistic:
+%%
 aX = [X ones(sum(N),1)];
 figure, colormap('gray'), imagesc(aX), title('...now with grand mean'), set(gca,'Xtick',[])
 [B, sigma, R2, r] = glm_fit(y, aX);
-[T, F, df, p] = glm_con(c, aX, B, sigma);
-fprintf('P-value from GLM with grand mean = %4.3f\n',p)
 fprintf('Parameter (Beta) estimates = %s\n',num2str(B'))
 fprintf('Proportion of variance explained by model = %3.2f\n',R2)
+[T, F, df, p] = glm_con(c, aX, B, sigma);
+fprintf('P-value from GLM with grand mean = %4.3f\n',p)
 %% 
 % R2 - the proportion of variance explained - is a measure of overall model 
 % fit (and of effect size if hypothesis specified in terms of X). 
-%% 
-% Note however that the Bs have changed. This is because they now refer to deviations 
-% from the grand mean (rather than deviations from zero). Note that one could 
-% also specify the model in terms of two colums of X: one for the difference between 
-% conditions and one for the average across condition (the constant term). This 
-% is essentially a rotation of original X by the transformation matrix "TM" below, 
-% so we can simply apply the same transformation to c to test the equivalent contrast: 
-
-TM = [-1 1; 1/2 1/2]';
+% 
+% Note however that the Bs have changed. This is because they now refer to 
+% deviations from the grand mean (rather than deviations from zero). Note that 
+% one could also specify the model in terms of two colums of X: one for the difference 
+% between conditions and one for the average across condition (the constant term). 
+% This is essentially a rotation of original X by the transformation matrix "TM" 
+% below, so we can simply apply the same transformation to c to test the equivalent 
+% contrast: 
+%%
+TM = [-1 1; 1/2 1/2]'; % Transformation Matrix from separate groups to difference and mean across groups
 aX = X*TM; figure, colormap('gray'), imagesc(aX), title('Yet another alternative model'), set(gca,'Xtick',[])
-ac = c*TM;
+ac = c*TM; % Since applied TM to X, need to apply to contrast too
 [B, sigma, R2, r] = glm_fit(y, aX);
 [T, F, df, p] = glm_con(ac, aX, B, sigma);
 fprintf('Contrast now: %s',mat2str(ac'))
-fprintf('P-value from rotated GLM = %4.3f\n',p)
 fprintf('Parameter estimates = %s',num2str(B'))
 fprintf('Proportion of variance explained by model = %3.2f\n',R2)
+fprintf('P-value from rotated GLM = %4.3f\n',p)
 %% 
-% Note that p-value and R2 are unchanged from above (because models span the 
-% same space). Note also that the scaling of c does not affect the statistics 
+% Note that p-value and R2 are unchanged from above (because models span 
+% the same space). Note also that the scaling of c does not affect the statistics 
 % (though the sign does); nor does scaling of X (e.g, doubling the values in X 
-% will halve the values of B, but not affect the T statistic, since both the numerator 
-% and denominator of the T-statistic are scaled by the same amoutn).
+% will halve the values of B, but not affect the T statistic).
 %% GLM for paired T-test
 % We can now illustrate a paired T-test, where we simply add extra columns to 
 % X that capture the mean of each participant (note that the "glm_con" function 
-% pads any contrast vector c with 0's for any extra columns of X not included 
-% in the contrast vector provided):
-
+% pads any contrast vector c with 0's for any columns of X not included in the 
+% contrast vector provided):
+%%
 N = 20;
 yg{1} = sample_pop(pop, N(1), 1);
 yg{2} = yg{1} + randn(N,1)/2 + 0.5; % add signal with correlated effects across participants
@@ -1138,14 +1154,15 @@ fprintf('Unpaired GLM: T(%d)=%3.2f, p=%4.3f\n',df(2),T,p)
 % as there is in above case since the data for condition 2 share a contribution 
 % from those in condition 1).
 % 
-% _Exercise: convince yourself that the above paired T-test can be reduced to 
-% a one-sample T-test within the GLM. Hint apply TM = kron([-1 1],eye(N)) (noting 
-% that the GLM still works even though X is rank deficient, though you could reduce 
-% TM*X to just its second column, and adjust the contrast c to just [1])_
+% _Exercise: convince yourself that the above paired T-test can be reduced 
+% to a one-sample T-test within the GLM. Hint apply TM = kron([-1 1],eye(N)) to 
+% X and c (noting that the GLM still works even though X is rank deficient, though 
+% you could reduce X to just its second column, and adjust the contrast c to just 
+% [1])_
 %% ANOVA and F-tests
 % We now turn to experiments with more than two conditions, which are often 
 % analysed with "Analysis of Variance" (ANOVA) (thanks again to Fisher). In such 
-% cases, we may be interested in any differences between the three or more conditions; 
+% cases, we may be interested in any differences between three or more conditions; 
 % a hypothesis that cannot be tested with a T-statistic, but can be tested with 
 % the F-statistic. 
 % 
@@ -1157,29 +1174,27 @@ fprintf('Unpaired GLM: T(%d)=%3.2f, p=%4.3f\n',df(2),T,p)
 % row), an F-contrast can have more than one row (i.e., becomes a contrast matrix). 
 % This is easiest to explain with the concept of a 1x3 repeated-measures ("within-participant") 
 % ANOVA:
-
-nc = 3; % Number of conditions
-X = [kron(eye(nc),ones(N,1)) kron(ones(nc,1),eye(N))];
+%%
+X = [kron(eye(3),ones(N,1)) kron(ones(3,1),eye(N))];
 figure,imagesc(X), colormap('gray'), set(gca,'XTick',[])
 title('Design matrix for 1x3 repeated-measures ANOVA')
 %% 
 % We are now also going to generate data using a multivariate normal distribution 
 % (as if we had sampled the same person in a population several times), in which 
-% we can specify the precise correlation between measures from the same people 
-% (the variable "ppt_cor" below, the size of which determines how much more efficient 
-% within-participant designs can be; a parameter needed for power analyses):
+% we can specify the correlation between measures from the same people (the variable 
+% "ppt_cor" below, the size of which determines how much more efficient within-participant 
+% designs can be; a parameter also often needed for power analyses):
 
-rng(1,'twister')
+rng(1)
 pop_means = kron([1 2 3]/3,ones(N,1)); % Means across 3 conditions
 ppt_cor = 0.5; % correlation between measures from same participants
-pop_cov = ones(nc)*ppt_cor + (1-ppt_cor)*eye(nc) % covariance matrix
-figure,imagesc(pop_cov),colormap('gray'),colorbar
+pop_cov = ones(3)*ppt_cor + (1-ppt_cor)*eye(3) % covariance matrix
 y = mvnrnd(pop_means,pop_cov); % Generate data
 y = y(:); % Concatenate (from "wide" to "long" format)
 %% 
-% If we want to test whether the means of the three conditions differ in any 
-% way, we can specify an F-contrast with any of the contrast matrices below (which 
-% are all equivalent, and have same rank):
+% If we want to test whether the means of the three conditions differ in 
+% any way, we can specify an F-contrast with any of the contrast matrices below 
+% (which are all equivalent, and have same rank):
 
 fprintf('Equivalent F-contrasts\n')
 c = [1 -1 0; 0 1 -1]     % Does condition 1 differ from 2, and/or condition 2 from 3?
@@ -1195,24 +1210,25 @@ c = orth(diff(eye(3))')' % Orthonormal contrast (generally safest)
 % whether conditions 1 and 2 differ AND/OR whether conditions 2 and 3 differ. 
 % Or in geometric terms, for a 2D design matrix, you can think of a T-test as 
 % testing the distance along the projection of the data onto one direction through 
-% that 2D space, whereas the F-test is testing the distance from the origin, i.e, 
+% a 2D space, whereas the F-test is testing the distance from the origin, i.e, 
 % a circular exclusion zone.
 % 
 % The distribution of the F-statistic is determined by two dfs: the numerator 
 % df refers to the (dimensionality/rank of) the effects of interest, as specified 
 % by the F-contrast (with value 2 for examples above), whereas the denominator 
 % df refers to the remaining dfs in the data. A p-value can then be calculated 
-% from the parametric distribution of the F-statistic:
+% from the parametric distribution of the F-statistic (for which glm_con requires 
+% passing the residuals r too):
 
 [T,F,df,p,B,R2,r] = glm(y, X, c);
 fprintf('Main effect in 1x3 ANOVA: F(%d,%d)=%3.2f, p=%4.3f\n',df(1),df(2),F,p)
 %% 
-% _Exercise: how can one test for a linear effect across three conditions? You 
-% might think a contrast [-1 0 1] on above design matrix will do this, but this 
-% only compares the two extreme levels, i.e, could return a significant positive 
+% _Exercise: how can one test for a linear effect across three conditions? 
+% You might think a contrast [-1 0 1] on above design matrix will do this, but 
+% this only compares the two extreme levels, i.e, could return a significant positive 
 % effect even if the means of the data were [1 -3 2]. The solution is to fit a 
 % more restricted model with a linear regressor only, by setting X = [X(:,1:3)*[-1 
-% 0 1]' X(:,4:end)] and testing a contrast c = [1]._ 
+% 0 1]' X(:,4:end)] and testing a contrast c = [1]. _
 %% Nonsphericity (inhomogeniety of error (co)variance)
 % However there are situations in which the above p-values are incorrect (ie 
 % FPR too high). Above we stated that the GLM assumes the error is drawn independently 
@@ -1222,12 +1238,12 @@ fprintf('Main effect in 1x3 ANOVA: F(%d,%d)=%3.2f, p=%4.3f\n',df(1),df(2),F,p)
 % across conditions is "spherical". Sphericity is complicated to define, but a 
 % common case that meets sphericity is that the covariance matrix has "compound 
 % symmetry", which means that all the diagonal values are equal (homogeniety of 
-% variance, or heteroscedasticity) and all the off-diagonal values are equal (homogeniety 
-% of covariance). The pop_cov matrix above is compound symmetric, and the simulations 
-% below confirm that the FPR is controlled. But notice what happens between when 
-% either homogeniety of variance (as we met above in case of unpaired T-tests) 
-% or homogeniety of covariance are not met:
-
+% variance) and all the off-diagonal values are equal (homogeniety of covariance). 
+% The pop_cov matrix above is compound symmetric, and the simulations below confirm 
+% that the FPR is controlled. But notice what happens between when either homogeniety 
+% of variance (as we met above in case of unpaired T-tests) or homogeniety of 
+% covariance are not met:
+%%
 % continuing X and c from above
 num_samp = 1e3;
 p = nan(num_samp,3);
@@ -1253,13 +1269,13 @@ fprintf('Compound symmetric covariance, FPR=%4.3f\n',fpr(1))
 fprintf('Inhomogeniety of covariance,   FPR=%4.3f\n',fpr(2))
 fprintf('Inhomogeniety of variance,     FPR=%4.3f\n',fpr(3))
 %% 
-% Only the first example controls FPR at alpha, while FPR is elevated for the 
-% other two cases (the second example of inhomogeniety of covariance resembles 
+% Only the first example controls FPR at alpha, while FPR is elevated for 
+% the other two cases (the second example of inhomogeniety of covariance resembles 
 % the autocorrelation when y is a timeseries, as discussed later). A common way 
 % to correct for this nonsphericity is to adjust (reduce) the dfs, as we saw earlier 
 % in Welch's correction for inhomogeneous variances. The general approach uses 
-% what is called the Satterthwaite approximation (but variants include Greenhouse-Geisser 
-% or Huyn-Feldt). You can test this by passing a fourth argument to glm.m function 
+% the Satterthwaite approximation (but variants include Greenhouse-Geisser or 
+% Huyn-Feldt). You can test this by passing a fourth argument to glm.m function 
 % below, which tells it how many conditions of interest there are. This estimates 
 % the covariance across conditions from the residuals, and reduces the dfs accordingly. 
 % 
@@ -1271,19 +1287,19 @@ fprintf('Inhomogeniety of variance,     FPR=%4.3f\n',fpr(3))
 % condition corresponds to one level of each of multiple factors. For example, 
 % a design with two factors each with two levels would have 4 conditions, and 
 % corresponds to "2x2 ANOVA". Factorial designs are associated with a common set 
-% of contrasts (hypotheses): main effects of each factor plus interactions between 
-% them. For example, if we have factor F1 with levels A and B, and factor F2 with 
-% levels 1 and 2, and we order the four conditions in X as [A1 A2 B1 B2], then:
-
+% of hypotheses: main effects of each factor plus interactions between them. For 
+% example, if we have factor F1 with levels A and B, and factor F2 with levels 
+% 1 and 2, and we order the four conditions in X as [A1 A2 B1 B2], then:
+%%
 c1 = kron([-1 1], [1  1]) % Main effect of F1
 c2 = kron([1  1], [-1 1]) % Main effect of F2
 c3 = kron([-1 1], [-1 1]) % Interaction between F1 and F2 (difference of differences)
 %% 
 % More generally, all possible main effects and interactions in a factorial 
-% design can be generated by the Kronecker product of two contrasts for each factor 
-% f with P(f) levels: 1) "ones(P(f))" for the common effect across levels and 
-% 2) the orthonormal contrast for the difference between levels, defined in the 
-% F-contrasts section above, eg: 
+% design can be generated by the Kronecker product of two contrasts for each factor: 
+% "ones(P(f))" for the common effect across levels and the orthonormal contrast 
+% for the difference between levels, defined in the F-contrasts section above, 
+% where P(f) = number of levels for factor f, eg: 
 
 P = [2 3]; % 2 x 3 ANOVA
 m = {}; d = {};
@@ -1294,20 +1310,20 @@ end
 c = kron(m{1},d{2}) % Example of main effect of second factor in 2x3 design
 c = kron(d{1},d{2}) % Example of interaction between two factors in 2x3 design
 %% 
-% _Interesting factoid: Leonold Kronecker's famous saying was "Die ganzen Zahlen 
-% hat der liebe Gott gemacht, alles andere ist Menschenwerk" ("God made the integers, 
-% all else is the work of man")_
-%% 
-% When all conditions are between-participant (i.e., each condition is a group), 
-% we can have a single X with as many columns as there are groups, within which 
-% we can evaluate every contrast like above (possibly modelling inhomongeniety 
+% _Interesting factoid: Leonold Kronecker's famous saying was "Die ganzen 
+% Zahlen hat der liebe Gott gemacht, alles andere ist Menschenwerk" ("God made 
+% the integers, all else is the work of man")_
+% 
+% When all conditions are between-participant (i.e., each condition is a 
+% group), we can have a single X with as many columns as there are groups, within 
+% which we can evaluate every contrast like above (possibly modelling inhomongeniety 
 % of variance). When one or more factors are within-participant, however, we have 
 % an additional option to "partition" the error term (rather than the pooled error 
 % used so far). Because the columns in X for ANOVA designs are orthogonal, we 
 % can use a separate error term for each ANOVA effect (equivalent to the effect-by-participant 
 % interaction). This is equivalent to fitting a smaller GLM to each effect separately. 
 % So for a 2x2 design in which both factors are within-participant, we can fit:
-
+%%
 rng(1)
 N = 20;
 X = [kron(eye(4),ones(N,1)) kron(ones(4,1),eye(N))];
@@ -1356,7 +1372,7 @@ fprintf('Contrast %s, F(%d,%d) = %3.2f, partitioned p=%4.3f\n',mat2str(c3),df(1)
 % run the above over num_samp studies to calculate FPR_
 % 
 % Note permutation testing is possible with these more complex ANOVA models, 
-% but can be tricky because the exchaneability requirement restricts how exactly 
+% but can be tricky because the exchangeability requirement restricts how exactly 
 % participants can be swapped between conditions (indeed for the case of timeseries 
 % considered below, randomisation is very tricky, though one can phase-shuffle 
 % data while maintaing the power spectrum, i.e, autocorrelation). By contrast, 
@@ -1367,7 +1383,7 @@ fprintf('Contrast %s, F(%d,%d) = %3.2f, partitioned p=%4.3f\n',mat2str(c3),df(1)
 % in which the values in X are binary, but it can equally be applied to continuous 
 % values in X, e.g, to perfom multiple regression. The simplest example of this 
 % is to estimate the correlation between two variables:
-
+%%
 rng(1)
 pop_cov = ones(2)*ppt_cor + (1-ppt_cor)*eye(2);
 y = mvnrnd(ones(N,2),pop_cov); % mean of 1
@@ -1377,35 +1393,34 @@ X = [y(:,2) ones(N,1)]; figure, imagesc(X), colormap('gray'), set(gca,'XTick',[]
 fprintf('Pearson correlation, R(%d)=%3.2f, p=%4.3f\n',N,R,Rp)
 fprintf('GLM F-test, F(%d,%d)=%3.2f, p=%4.3f\n',df(1),df(2),F,2*p) % two-tailed p
 %% 
-% The F-contrast on the first column of X gives the same p-value as the standard 
-% Pearson correlation. Note that it is important to include the second, constant 
-% term in X, to remove the mean (if you do not include it, and the means of y(:,1) 
-% and y(:,2) are not zero, then the p-value will not correspond to a correlation, 
-% but include the effect of the means). You will also note that sqrt(R2) does 
-% not equal the Pearson correlation coefficient r. This is because R2 above refers 
-% to whole model fit, including mean. To estimate the Pearson correlation coefficient, 
-% you could mean-correct y:
+% The F-contrast on the first column of X gives the same p-value as the 
+% standard Pearson correlation. Note that it is important to include the second, 
+% constant term in X, to remove the mean (if you do not include it, and the means 
+% of y(:,1) and y(:,2) are not zero, then the p-value will not correspond to a 
+% correlation, but include the effect of the means). You will also note that sqrt(R2) 
+% does not equal the Pearson correlation coefficient Rp. This is because R2 above 
+% refers to whole model fit, including mean. To estimate the Pearson correlation 
+% coefficient, you could mean-correct y (though there are other ways of calculating 
+% R2 from sub-spaces of X specified by the contrast):
 
 my = y - repmat(mean(y),N,1); % mean-correct y
 [T,F,df,p,~,R2,r] = glm(my(:,1), my(:,2), 1);
 fprintf('GLM R=%3.2f, F(%d,%d)=%3.2f, p=%4.3f\n',sqrt(R2),df(1),df(2),T,p*2) % two-tailed p
 %% 
-% (though there are other ways of calculating R2 from sub-spaces of X specified 
-% by the contrast). While we have now recovered the Pearson coefficient, note 
-% that the p-value is not correct, because we removed df's from the data when 
-% we mean-corrected, but not told the model about this. This is why it is generally 
-% best not to perform any operations on the data (like mean-correction) before 
-% entering them into the GLM; rather you should include such operations in the 
-% GLM if possible (e.g, adding a constant term, or filter the model if also filtering 
-% the timeseries, see later).
+% While we have now recovered the Pearson coefficient, note that the p-value 
+% is no longer correct, because we removed df's from the data when we mean-corrected, 
+% but not told the model about this. This is why it is generally best not to perform 
+% any operations on the data (like mean-correction) before entering them into 
+% the GLM; rather you should include them in the GLM instead (e.g, adding a constant 
+% term, or filter the model if also filtering the timeseries, see later).
 % 
 % _Interesting factoid: Karl Pearson made many contributions to statistics, 
 % though like his colleague Fisher, he was tarred by his views on eugenics. However, 
 % correlation is not causation, and statistical training does not necessarily 
 % result in eugenic beliefs._
-%% 
+% 
 % We can plot the fit and data from the original example above:
-
+%%
 Y = X*B; % reconstruct fitted response, where B(1) is slope and B(2) is intercept
 figure,hold on,plot(X(:,1),Y,'-'),plot(y(:,2),y(:,1),'o'); legend({'Fit','Data'}), axis square
 set(gca, 'XAxisLocation', 'origin', 'YAxisLocation', 'origin'), ylabel('y'), xlabel('X(:,1)')
@@ -1428,33 +1443,35 @@ fprintf('Mean of data=%3.2f',mean(y(:,1)))
 %% Correlated Regressors and Orthogonalisation
 % Let's now fit the data with two continuous regressors, but make them highly 
 % correlated:  
-
-rng(3,'twister')
+%%
+rng(1)
 pop_cov = [1 0.5 0.5; 0.5 1 0.9; 0.5 0.9 1]
 y = mvnrnd(ones(N,3),pop_cov); % mean irrelevant for below
 %% 
 % If we fit each regressor separately, the p-value is usually small:
 
-[T,F,df,p] = glm(y(:,1), [y(:,2) ones(N,1)], 1); 
-fprintf('Separate GLM T-test for 1st regressor, p=%4.3f\n',p)
-[T,F,df,p] = glm(y(:,1), [y(:,3) ones(N,1)], 1);
-fprintf('Separate GLM T-test for 2nd regressor, p=%4.3f\n',p)
+[T,F,df,p] = glm(y(:,1), y(:,2), 1); fprintf('Separate GLM T-test for 1st regressor, p=%4.3f\n',p)
+[T,F,df,p] = glm(y(:,1), y(:,3), 1); fprintf('Separate GLM T-test for 2nd regressor, p=%4.3f\n',p)
 %% 
 % However, when we add both to the same model:
 
 X = [y(:,2:3) ones(N,1)]; figure, imagesc(X), colormap('gray'), set(gca,'XTick',[]), title('Design matrix with correlated regressors')
 [B, sigma, R2, r] = glm_fit(y(:,1), X);
-[T, F, df, p] = glm_con([1 0 0], X, B, sigma); 
-fprintf('Joint GLM T-test for 1st regressor, p=%4.3f\n',p)
-[T, F, df, p] = glm_con([0 1 0], X, B, sigma); 
-fprintf('Joint GLM T-test for 2nd regressor, p=%4.3f\n',p)
+[T, F, df, p] = glm_con([1 0 0], X, B, sigma); fprintf('Joint GLM T-test for 1st regressor, p=%4.3f\n',p)
+[T, F, df, p] = glm_con([0 1 0], X, B, sigma); fprintf('Joint GLM T-test for 2nd regressor, p=%4.3f\n',p)
 %% 
-% ...rarely is either individual regressor significant. This is because they 
-% GLM only tests the unique variance explained by each regressor. Sometimes people 
-% orthogonalise one regressor with respect to the other. This can be done with 
-% the "orthog" function below (which actually just residualises one regressor 
-% by fitting a GLM that predicts it by the other). So let's orthogonalise the 
-% first regressor with respect to the second:
+% ...rarely is either individual regressor significant. This is because 
+% they GLM only tests the unique variance explained by each regressor. Note however 
+% that an F-test across both regressors produces a highly significant result because 
+% it includes that shared variance:
+
+[T, F, df, p] = glm_con([1 0 0; 0 1 0], X, B, sigma, r); fprintf('Joint GLM F-test for 1st and 2nd regressor, p=%4.3f\n',p)
+%% 
+% When they care about just one of the regressors, people sometimes orthogonalise 
+% one regressor with respect to the other. This can be done with the "orthog" 
+% function below (which actually just residualises one regressor by fitting a 
+% GLM that predicts it by the other). So let's orthogonalise the first regressor 
+% with respect to the second:
 
 orthog = @(x,y) x - y*(pinv(y)*x); % orthogonalise x with respect to y
 oX = X; oX(:,1) = orthog(X(:,1),X(:,2));
@@ -1465,8 +1482,8 @@ fprintf('Betas after orthogonalisation: %s\n',num2str(B'))
 [T, F, df, p] = glm_con([1 0 0], oX, B, sigma); fprintf('Orthog GLM T-test for 1st regressor, p=%4.3f\n',p)
 [T, F, df, p] = glm_con([0 1 0], oX, B, sigma); fprintf('Orthog GLM T-test for 2nd regressor, p=%4.3f\n',p)
 %% 
-% As with mean-correction above, the Beta and p-value for the regressor that 
-% has been orthogonalised (B1) does not change, but those for the other regressor 
+% As with mean-correction above, the Beta and p-value for the regressor 
+% that has been orthogonalised (B1) does not change, but those for the other regressor 
 % do, because now the common variance between the two has been assigned to it. 
 % However, there is no magic here - in general, one cannot know how to assign 
 % common variance to two or more correlated variables - there should always be 
@@ -1477,11 +1494,10 @@ fprintf('Betas after orthogonalisation: %s\n',num2str(B'))
 % which are effectively just different orders of orthogonalisation.)
 % 
 % Note that sometimes the GLM regressors are Z-scored; again, this does not 
-% affect tests of the significance of individal parameter estimates (when there 
-% is a constant term in X), but the scaling by their std does affect contrasts 
-% between regressors (and this is often important, in order to put the parameters 
-% onto the same scale, ie make them commensurate, if they do not already have 
-% meaningful units of comparison).
+% affect tests of the significance of individal parameter estimates, but the scaling 
+% by their std does affect contrasts between regressors (and is often important, 
+% in order to put the parameters onto the same scale, ie make them commensurate, 
+% if they do not have meaningful units of comparison).
 %% Efficiency
 % Importantly, high correlation between regressors in a GLM reduces the power 
 % with which their contributions (parmeters) can be estimated. It does not bias 
@@ -1490,47 +1506,53 @@ fprintf('Betas after orthogonalisation: %s\n',num2str(B'))
 % data samples). Indeed, the correlation between regressors is inherent to the 
 % definition of the efficiency of a GLM to test a specific hypothesis, which is 
 % a function of the design matrix and contrast:
-
+%%
 efficiency = @(X,c) trace(c*inv(X'*X)*c')^-1; % scaling arbitrary
 %% 
-% High correlation between columns of X reduces the middle term in this equation. 
-% Note however that the contrast itself also matters, so it may not matter if 
-% regressors are (negatively) correlated, if one only cares about the difference 
-% between them, as in the example below, where efficiency for the difference between 
-% the slopes of two regressors is much higher than that for their average slope: 
+% High correlation between columns of X reduces the middle term in this 
+% equation. Note however that the contrast itself also matters, so it may not 
+% matter if regressors are (negatively) correlated, if one only cares about the 
+% difference between them, as in the example below, where efficiency for the difference 
+% between the slopes of two regressors is much higher than that for their average 
+% slope: 
 
 rng(1)
 X = [mvnrnd(ones(N,2),[1 -0.5; -0.5 1]) ones(N,1)];
 c = [1 1 0]; fprintf('Efficiency of contrast %s: %3.2f\n',mat2str(c),efficiency(X,c))
 c = [1 -1 0]; fprintf('Efficiency of contrast %s: %3.2f\n',mat2str(c),efficiency(X,c))
 %% 
-% Or in the extreme case, the columns of a two-sample T-test are perfectly anti-correlated, 
-% which means one cannot estimate one condition independently of the other (when 
-% a constant term is included), and efficiency above is not defined, but one can 
-% still estimate the difference between the two conditions.
+% Or in the extreme case, the columns of a two-sample T-test are perfectly 
+% anti-correlated, which means one cannot estimate one condition independently 
+% of the other (when a constant term is included), and efficiency above is not 
+% defined, but one can still estimate the difference between the two conditions.
 % 
 % _Exercise (advanced): this definition of efficiency is helpful when comparing 
 % different fMRI designs, where the effects of correlations between regressors 
 % induced by the HRF and by the onsets of different conditions is difficult to 
 % intuit. You could try estimating efficiency for variants of the fMRI GLM below 
-% (taking care to match the scaling of X and c)._
+% (taking care to match the scaling of X and c). More generally, this website 
+% explains how to design efficient fMRI experiments: |_https://imaging.mrc-cbu.cam.ac.uk/imaging/DesignEfficiency|
 %% Nonlinear effects
 % Finally, we are assuming a linear relationship between y and (each regressor 
 % in) X. In general the relationship could be nonlinear, and while there are several 
 % ways of modelling this, the simplest approach is through a polynomial expansion 
 % (using "polynom" function at end). This example detects a pure quadratic relationship 
 % between y and the original variable x:
-
+%%
 x = sort(X(:,1)); % expand first regressor from above; sorted to aid visualisation
 y = detrend(detrend(x,0).^2,0) + randn(N,1); % Create quadratic effect plus noise
 X = polynom(x,2);
 figure,imagesc(X),colormap('gray'), set(gca,'XTick',[]), title('Second-order polynomial expansion')
-[T,F,df,p] = glm(y, X, [1 0 0]); fprintf('0th-order (intercept) effect, p=%4.3f\n',p)
-[T,F,df,p] = glm(y, X, [0 1 0]); fprintf('1st-order (linear) effect, p=%4.3f\n',p)
-[T,F,df,p] = glm(y, X, [0 0 1]); fprintf('2nd-order (quadratic) effect, p=%4.3f\n',p)
+[T,F,df,p] = glm(y, X, [1 0 0]); fprintf('0th-order (intercept) effect, T(%d)=%3.2f, p=%4.3f\n',df(2),T,p)
+[T,F,df,p] = glm(y, X, [0 1 0]); fprintf('1st-order (linear) effect, T(%d)=%3.2f, p=%4.3f\n',df(2),T,p)
+[T,F,df,p] = glm(y, X, [0 0 1]); fprintf('2nd-order (quadratic) effect, T(%d)=%3.2f, p=%4.3f\n',df(2),T,p)
+[T,F,df,p] = glm(y, X, eye(3));  fprintf('F-test for overall effect, F(%d,%d)=%3.2f, p=%4.3f\n',df(1),df(2),F,p)
 %% 
-% (Here there is a good reason to orthogonalise higher order terms with respect 
-% to lower order ones). 
+% The first three T-tests test for constant, linear and quadratic effects 
+% respectively (where there is a good reason to orthogonalise higher order terms 
+% with respect to lower order ones, to assign any shared variance to lower order 
+% terms), but more common is the final F-test, which captures any dependency between 
+% y and the original variable x, at least to second-order.
 % 
 % More generally, there are generalisations of the GLM that insert a nonlinear 
 % "linkage" function between y and X (i.e, a logistic function when the data are 
@@ -1545,7 +1567,7 @@ figure,imagesc(X),colormap('gray'), set(gca,'XTick',[]), title('Second-order pol
 % the "canonical_hrf" function at end, we can simulate fMRI data by convolving 
 % it with delta functions that represent brief neural activity assumed to occur 
 % whenever we present a stimulus:
-
+%%
 hrf = canonical_hrf(1); figure, plot([0:32],hrf);
 axis([0 32 -0.05 0.25]),xlabel('Post-stimulus time (s)');  title('Canonical HRF')
 N = 270; % A run of 270 fMRI scans
@@ -1553,20 +1575,20 @@ N = 270; % A run of 270 fMRI scans
 %r = randperm(N); r = r(1:20);
 r = [1 12 35 40 50 80 82 100 132 157 168 180 210 220 235 245]; % reasonably-spaced (random selection too random!)
 ons = zeros(N,1); ons(r) = 1;
-figure,plot(ons),hold on, title('Stimulus onsets, predicted fMRI response and data')
+figure,plot(ons,'r'),hold on, title('Stimulus onsets, predicted fMRI response and data')
 % Convolve with HRF
 y = conv(ons, hrf); y=y(1:N); y = y/std(y); % scale so visible on same axis
-plot(y)
+plot(y,'b')
 %% 
-% Some of the autocorrelation comes from the noise though - for example, ongoing 
-% neural activity unrelated to our stimuli, which would also be expressed via 
-% the HRF, plus aliased biorhythms (such as cardiac), plus slow "scanner drift":
+% Some of the autocorrelation comes from the noise though - for example, 
+% ongoing neural activity unrelated to our stimuli, which would also be expressed 
+% via the HRF, plus aliased biorhythms (such as cardiac), plus slow "scanner drift":
 
 rng(2); % ensure some reasonable (reproducible) noise
-n = conv(randn(N,1)*5, hrf); n=n(1:N); % non-stimulus-locked neural noise, expressed through same HRF
+n = conv(randn(N,1)*2, hrf); n=n(1:N); % non-stimulus-locked neural noise, expressed through same HRF
 y = y + n;
-%n = sum(polynom([1:N]',2),2); % Slow (polynomial) drift
-%y = y + n;
+n = sum(polynom([1:N]',2),2); % Slow (polynomial) drift
+y = y + n;
 plot(y,':k.'), axis tight; xlabel('fMRI timepoint (s)');
 legend({'Onsets','Signal','Data (with noise)'})
 %% Temporal Basis Sets, Filtering and Autocorrelated error
@@ -1574,7 +1596,7 @@ legend({'Onsets','Signal','Data (with noise)'})
 % Several options are discussed in the literature, but here will use an "FIR" 
 % basis set of tophat functions every 2s of the 32s after each onset. This produces 
 % the design matrx below, which we can estimate with a GLM:
-
+%%
 num_bins = 16 % Number of bins
 bin_dur  = 2  % Bin duration (s)
 FIR = kron(eye(num_bins),ones(bin_dur,1));
@@ -1590,21 +1612,17 @@ c = eye(num_bins); % F-contrast for any non-zero Betas
 [T, F, df, p] = glm_con(c, X, B, sigma, r);
 fprintf('F-test for FIR (assuming error white), F(%d,%d)=%3.2f, p=%4.3f\n',df(1),df(2),F,p)
 %% 
-% The FIR parameters roughly resemble the true HRF used to create the data, 
-% and the F-test suggests that there is a (highly) significant stimulus-locked 
-% response. Note this is effectively a "deconvolution", and there are other temporal 
-% basis sets possible (which could also be applied to overlapping ERPs that are 
-% jittered over intervals <~1s). 
-% 
-% However, this F-test assumes the error is IID, ie spherical, which we can 
-% see is unlikely from the residuals, which show temporal smoothness and slow 
-% drift, given the way the noise was created above:
+% Note that the FIR parameters roughly resemble the true HRF used to create 
+% the data, and the F-test suggests that there is a (highly) significant stimulus-locked 
+% response. However, this F-test assumes the error is IID, ie spherical, which 
+% we can see is unlikely from the residuals: they show temporal smoothness and 
+% slow drift, given the way the noise was created above:
 
 figure, plot(r,'o-'); xlabel('fMRI timepoint (s)'); title('Residuals (autocorrelated)')
 %% 
-% Some of the typical autocorrelation in fMRI noise (that induced by the slow 
-% drift above) can be removed by high-pass filtering, which can be achieved by 
-% adding a set of sinusoids to the design matrix (a so-called "Discrete Cosine 
+% Some of the typical autocorrelation in fMRI noise (that induced by the 
+% slow drift above) can be removed by high-pass filtering, which can be achieved 
+% by adding a set of sinusoids to the design matrix (a so-called "Discrete Cosine 
 % Transform", DCT):
 
 HPC = fix(2*N/128 + 1); % DCT cutoff if highpass filtering to 1/128s
@@ -1619,14 +1637,14 @@ figure,imagesc(X),colormap('gray'), set(gca,'Xtick',[]), title('FIR design matri
 fprintf('F-test for FIR (after filtering), F(%d,%d)=%3.2f, p=%4.3f\n',df(1),df(2),F,p)
 figure, plot(r,'o-'); xlabel('fMRI timepoint (s)'); title('Residuals (autocorrelated)')
 %% 
-% While the residuals no longer show slow drift (and the F-statistic has increased, 
-% despite loss of residual dfs), they are still autocorrelated. One way to model 
-% this specific type of nonsphericity is an "AR(p)" model (p-th order autoregressive 
-% model). If we assume an "AR(1) + white noise" model, for example, this predicts 
-% that the (population) error covariance can be modelled as a combination of two 
-% "covariance components" (Q below): the first predicted by the AR(1) component 
-% and the second repesenting additional independent noise at each timepoint:
-
+% While the residuals no longer show slow drift (and the F-statistic has 
+% increased, despite loss of residual dfs), they are still autocorrelated. One 
+% way to model this specific type of nonsphericity is an "AR(p)" model (p-th order 
+% autoregressive model). If we assume an "AR(1) + white noise" model, for example, 
+% this predicts that the (population) error covariance can be modelled as a combination 
+% of two "covariance components" (Q below): the first predicted by the AR(1) component 
+% and the second repesenting additional independent (white) noise at each timepoint:
+%%
 t    = [1:N];
 Q{1} = toeplitz(t.*exp(-t));
 Q{2} = eye(N);
@@ -1636,11 +1654,10 @@ title('First 10 timepoints of assumed AR(1) component')
 subplot(2,1,2),imagesc(Q{2}(1:10,1:10)),colormap('gray'),
 title('First 10 timepoints of assumed white noise component')
 %% 
-% If we assume that the error comes from such an AR(1)+WN error process, then 
-% we can use an estimate of this to "pre-whiten" the data, i.e. multiply both 
-% the data and model by the (squareroot) of the inverse of the error covariance. 
-% This prewhitening matrix "W" is estimated by the "estimate_autocorrelation" 
-% function at end:
+% We can fit the GLM once to estimate the residuals, estimate the autocorrelation 
+% (error) matrix from these, and then multiply both the data and model by the 
+% (squareroot) of the inverse of this error covariance. This prewhitening matrix 
+% "W" is estimated by the "estimate_autocorrelation" function at end:
 
 [T,F,df,p,B,R2,r] = glm(y, X, c);     % Fit GLM once to estimate residuals
 [V,W] = estimate_autocorrelation(r);  % Estimate autocorrelation from residuals
@@ -1648,14 +1665,14 @@ title('First 10 timepoints of assumed white noise component')
 fprintf('F-test for FIR (prewhitening with AR(1)+WM), F(%d,%d)=%3.2f, p=%4.3f\n',df(1),df(2),F,p)
 %% 
 % Notice how we have now recovered the original dfs.
-%% 
-% However, estimating the true error covariance from the residuals can be inefficient 
-% (noisy), as shown below, and mis-estimation can result incorrect statistics 
-% after prewhitening. One way to improve its estimation is to pool data across 
-% samples, e.g, voxels. If we assume the error covariance is identical across 
-% voxels, we can estimate it much more precisely by repeating the above for many 
-% voxels, as shown below. 
-
+% 
+% However, estimating the true error covariance from the residuals can be 
+% inefficient (noisy), as shown below, and mis-estimation can result incorrect 
+% statistics after prewhitening. One way to improve its estimation is to pool 
+% data across samples, e.g, voxels. If we assume the error covariance is identical 
+% across voxels, we can estimate it much more precisely by repeating the above 
+% for many voxels, as shown below. 
+%%
 r2 = r*r'; figure,imagesc(r2(1:16,1:16)), title('Covariance of residuals from one sample (voxel)') % autocorrelation hard to see
 num_tests = 100;
 y = mvnrnd(zeros(num_tests,N),Q{1})'; % y now matrix
@@ -1663,12 +1680,12 @@ y = mvnrnd(zeros(num_tests,N),Q{1})'; % y now matrix
 %figure,plot(mean(B,2)) % (much nicer HRF estimates!)
 r2 = r*r'; figure,imagesc(r2(1:16,1:16)), title('Covariance of residuals, pooled across voxels') % smoothness now visible
 %% 
-% Note that we are calling the "glm_fit" function with a time-by-voxel matrix 
-% rather than vector of data, which is useful for simultaneously fitting a large 
-% number of GLMs. If you run the code below (though it will take a while), you 
-% can see that such "voxel-wide" estimation of nonsphericity results in better 
+% Note that we are can call the "glm_fit" function with a time-by-voxel 
+% matrix rather than vector of data, which is useful for simultaneously fitting 
+% a large number of GLMs. If you run the code below (though it will take a while), 
+% you can see that such "voxel-wide" estimation of nonsphericity results in better 
 % control of FPR than trying to estimate on each voxel separately:
-
+%%
 N = 90; % Take a subset of timepoints to speed up
 y = conv(ons, hrf); y = y(1:N); y = y/std(y);
 ys = repmat(y,1,num_tests); % Duplicate signal across voxels
@@ -1698,23 +1715,23 @@ fpr = sum(pp<alpha,1)/num_samp;
 fprintf('Voxel-wide nonsphericity correction, mean FPR=%4.3f\n',mean(fpr))
 %fprintf('Voxel-wide nonsphericity correction, std FPR=%4.3f\n',std(fpr))
 %% 
-% However, even when pooling across voxels in the voxel-wide analysis, we are 
-% not controlling the FPR properly. This is because the residuals do not capture 
+% However, even when pooling across voxels in the voxel-wide analysis, we 
+% are not controlling the FPR properly. This is because the residuals do not capture 
 % just the true error, but also effects of removing the signal (what can be explained 
-% by the design matrix). The proper way is to estimate the GLM parameters (B) 
-% and the error model (hyper)parameters (h) simultaneously, using an iterative 
-% algorithm like "Restricted Maximum Likelihood" (ReML). This is available in 
-% many software packages (including that used for the mixed effects models below), 
-% but is beyond the present remit.
+% by the design matrix). The proper way is to estimate the GLM parameters and 
+% the error model (hyper)parameters simultaneously, using an iterative algorithm 
+% like "Restricted Maximum Likelihood" (ReML). This is available in many software 
+% packages (including that used for the mixed effects models below), but is beyond 
+% the present remit.
 % 
-% Finally, note that even without a task, the GLM can be used to estimate functional 
-% connectivity between two voxels/ROIs, by putting the timeseries of one ROI into 
-% X, together with confounds like above, when fitting the timeseries of the other 
-% ROI. The resulting p-value will be properly adjusted for filtering, autocorrelation 
+% Finally, note that even without a task, the GLM can be used to estimate 
+% functional connectivity between two voxels/ROIs, by putting the timeseries of 
+% one into X, together with confounds like above, when fitting the other timeseries. 
+% The resulting p-value will be properly adjusted for filtering, autocorrelation 
 % etc, unlike when simply estimating the Pearson correlation coefficient between 
 % two ROIs after preprocessing their data independently.
 %% Heirarchical Linear Models
-% So far, we have modelled just one source of error variance (one "random effect"), 
+% So far, we have modelled just one source of error variance (random effect), 
 % e.g, across participants in the T-tests and ANOVAs, or across timepoints in 
 % the timeseries analyses. We often have mulitple measurements (within each condition) 
 % for each of mulitple participants. For example, we might collect reaction times 
@@ -1725,10 +1742,10 @@ fprintf('Voxel-wide nonsphericity correction, mean FPR=%4.3f\n',mean(fpr))
 % across trials within each participant, and simply perform a test on these means 
 % across participants (i..e, ignoring the error associated with each trial-average). 
 % 
-% This is sometimes called the "summary statistic" or two-stage approach. It 
-% is illustrated below, along with effects of the number of trials relative to 
-% number of participants:
-
+% This is sometimes called the "summary statistic" or two-stage approach. 
+% It is illustrated below, along with effects of the number of trials relative 
+% to number of participants:
+%%
 num_ppt = [10  20 10]   % Number of participants
 num_trl = [100 10 20]   % Number of trials per participant
 pop_std = [1  1  1]     % Std of mean across participants
@@ -1751,21 +1768,22 @@ for e = 1:size(num_ppt,2)
     fprintf('Positive rate with %d participants with %d trials = %3.2f\n',num_ppt(e),num_trl(e),pr)
 end
 %% 
-% In this situation where variability across trials is much higher than variability 
-% across participants, having 10x more trials produces higher power than having 
-% 2x more participants (though if the total number of trials (ie, num_ppt*num_trls) 
-% is fixed, it is generally better to have more participants). 
+% In this situation where variability across trials is much higher than 
+% variability across participants, having 10x more trials produces higher power 
+% than having 2x more participants (cf. the first two results above); though if 
+% the total number of trials (ie, num_ppt*num_trls) is fixed, it is generally 
+% better to have more participants (cf. the last two results above).
 % 
 % _Exercise: Try situation where variability across trials is less than than 
 % variability across participants?_
-%% 
+% 
 % But what happens if different participants have different numbers of trials? 
-% In this case, the mean for a participant who did more trials is a more accurate 
+% In this case, the mean for participants with more trials is a more accurate 
 % estimate, so we could increase the contribution of this participant's mean to 
 % the estimate of the population mean. This is called "weighting" (a simple case 
 % of "weighted least squares"), which can produce more sensitive tests, as illustrated 
 % below:
-
+%%
 % pop_mean, num_samp etc as above
 rng(1)
 num_ppt = 20
@@ -1804,18 +1822,19 @@ fprintf('Power for weighted T-test = %3.2f\n',sum(pval<alpha)/num_samp)
 %% 
 % Note how giving more weight to participants whose mean has been estimated 
 % from more trials results in a more powerful final test. Such highly "unbalanced" 
-% designs are where the summary statistic approach (that ignores estimation errror 
-% associated with each participant) becomes non-optimal. However, this weighting 
-% is just a simple case of more general "mixed effects" models, to which we next 
-% turn, in which one can have more than one random effect, i.e., variance due 
-% to participants, variance due to trials, etc...
+% designs, in which summary statistics are estimated with quite different efficiency 
+% across participants, are where the summary statistic approach (that ignores 
+% estimation errror associated with each participant) becomes non-optimal. However, 
+% this weighting is just a simple case of more general "mixed effects" models, 
+% to which we next turn, in which one can have more than one random effect, i.e., 
+% variance due to participants, variance due to trials, etc...
 % 
-% More generally, this situation can be represented as a heirarchical set of 
+% More generally, this situation can be explained as a heirarchical set of 
 % GLMs:
 % 
-% y    = X1 * B1 + e1
+%     y    = X1 * B1 + e1
 % 
-% B1  = X2 * B2 + e2
+%     B1  = X2 * B2 + e2
 % 
 % So in example above, B1 captures the mean across trials for each participant, 
 % while B2 is the mean across participants. In a Bayesian context, B2 can also 
@@ -1826,16 +1845,16 @@ fprintf('Power for weighted T-test = %3.2f\n',sum(pval<alpha)/num_samp)
 % example ("spatial regularisation").
 %% Linear Mixed Effects (LME) Models
 % We finish with LME models, which can no longer be solved by simply matrix 
-% inversion (OLS/WLS), and require iterative techniques like ReML mentioned above. 
-% Because these are quite complex in general, we switch to Matlab's built-in LME 
-% functions. First, we need to represent the data more generally, in which each 
-% observation is a row, and each column indicates where that observation comes 
-% from, e.g, a particular participant ID, condition and possiby a particular stimulus 
-% ID (sometimes called "long-format"). In Matlab, these are called "tables". 
+% inversion, and require iterative techniques like ReML mentioned above. Because 
+% these are quite complex in general, we switch to Matlab's built-in LME functions. 
+% First, we need to represent the data more generally, in which each observation 
+% is a row, and each column indicates where that observation comes from, e.g, 
+% a particular participant ID, condition and possiby a particular stimulus ID 
+% (sometimes called "long-format"). In Matlab, these are called "tables". 
 % 
-% Let's start by creating a long-format table for the data created above, with 
-% just one condition and variable numbers of trials across participants:
-
+% Let's start by creating a long-format table for the data created above, 
+% with just one condition and variable numbers of trials across participants:
+%%
 ppt_ID = [];
 for p = 1:num_ppt
     ppt_ID = [ppt_ID; p*ones(num_trl(p),1)];
@@ -1844,22 +1863,19 @@ end
 tab = table(samp_vals(:,1),ppt_ID,'VariableNames',{'y','Participant'});
 tab([1:3 11:13],:)
 %% 
-% We can now fit an LME model. The generic "Wilkinson" notation for such a model 
-% is "y ~ 1 + F1 + (1 + F1|R1)", where the "1" represents an intercept, F1 is 
-% a fixed effect and R1 is a random effect (e.g., participants). We will demonstrate 
+% We can now fit an LME model. The generic notation for such a model is 
+% "y ~ 1 + F1 + (1 + F1|R1)", where the "1" represents the intercept, F1 is a 
+% fixed effect and R1 is a random effect (e.g., participants). We will demonstrate 
 % more than one fixed and random effect later. The term "(1|R1)" is known as the 
 % "random intercept" (e.g, capturing the mean of each participant; akin to the 
 % participant columns in the GLM section earlier), and the term "(F1|R1)" is a 
 % "random slope" (e.g, allowing for the possibility that different participants 
-% show different effect sizes of F1).
-% 
-% _Interesting factoid: I couldn't find any interesting factoid about Graham 
-% Wilkinson, except that he liked to design new ways of representing railway timetables._
+% show different size of effects of F1).
 % 
 % However, for the one-sample T-test example above, there is just an intercept 
 % (no other fixed effect) and there is only a random intercept, so the model is 
-% simply "y ~ 1 + (1|participant)". We can then compare the power of LME with 
-% WLS and summary statistic approaches above:
+% simply "y ~ 1 + (1|participant)". Using the values in all_vals from preceding 
+% section we can see the power of LME:
 
 pval = nan(num_samp,1);
 for s = 1:num_samp
@@ -1870,17 +1886,16 @@ end
 lme % display output
 fprintf('\n\nPower for LME = %3.2f\n',sum(pval<alpha)/num_samp)
 %% 
-% which is higher than for the weighted and unweighted two-stage T-tests in 
-% the preceding section. This is largely because of the massive increase in dfs 
-% (at price of needing a more complex model of random effects). 
+% which is higher than for the weighted and unweighted two-stage T-tests 
+% in the preceding section. This is largely because of the massive increase in 
+% dfs (at price of needing a more complex model of random effects). 
 %% Simpsons paradox
 % This paradox relates to a pattern of data in which an independent variable 
 % shows a relationship with the dependent variable across trials within each participant, 
 % but a relationship of the opposite sign for the means across trials. This is 
 % plotted below, where each participant's data is a different colour, while the 
-% black line shows the linear fit to the means across participants (using the 
-% GLM to estimate those linear slopes).
-
+% black line shows the linear fit to the means across participants.
+%%
 num_trl = 10;
 num_ppt = 5;
 ppt_ID = []; age = []; y = [];
@@ -1903,24 +1918,25 @@ axis([10 10*(num_ppt+2) 0 max(y(:))]), xlabel('Age'), ylabel('y'), legend(txt, '
 
 tab = table(y(:),age(:),nominal(ppt_ID),'VariableNames',{'y','Age','Participant'});
 %% 
-% Notice how there is a positive effect of age on the mean values across participants, 
-% but a negative effect of age within each participant. If we fit an LME:
+% Notice how there is a positive effect of age on the mean values across 
+% participants, but a negative effect of age within each participant. If we fit 
+% an LME:
 
 m1 = fitlme(tab,'y ~ Age + (1|Participant)','FitMethod','REML')
 %% 
-% we see a negative effect of Age, as expected (with the different means across 
-% participants accommodated by the random intercepts). One explanation for this 
-% pattern could be a variable like "environmental pollution", which might increase 
-% over the years and impair cognitive scores within each person, but because older 
-% people were born earlier (when there was less pollution), there is a positive 
-% effect of age on their average scores.
+% we see a negative effect of Age, as expected (with the different means 
+% across participants accommodated by the random intercepts). One explanation 
+% for this pattern could be a variable like "environmental pollution", which might 
+% increase over the years and impair cognitive development during childhood, but 
+% because older people were born earlier (when there was less pollution), they 
+% show a positive effect of age in their average score.
 %% Model comparison 
 % Clearly the real advantage of LME models comes with more complex heirarchical 
 % designs with multiple random effects. So let's generate some data from two fixed 
 % effects (a 2x2 design), in which there is a main effect of the second factor 
 % (f2), and in which each randomly-sampled participant is tested on a set of randomly-sampled 
 % stimuli (i.e., two random effects):
-
+%%
 rng(1)
 pop_mean = 1; pop_std = 2;
 num_ppts = 20; % Number of participants
@@ -1970,7 +1986,7 @@ m1 = fitlme(tab,'y ~ F1*F2 + (1|Participant) + (1|Stimulus)','FitMethod','REML')
 % depend on participant, i.e, we are not modelling random slopes (i.e, ignoring 
 % structure in the error). So alternatively, we could fit the most complex model 
 % and compare to the model above:
-
+%%
 m2 = fitlme(tab,'y ~ F1*F2 + (F1*F2|Participant) + (F1*F2|Stimulus)','FitMethod','REML')
 compare(m1,m2)
 %% 
@@ -1981,14 +1997,16 @@ compare(m1,m2)
 % we generated data with only one random slope), so we can also fit the "true" 
 % model: 
 
-m3 = fitlme(tab,'y ~ F1*F2 + (F2|Participant) + (1|Stimulus)','FitMethod','REML')
+m3 = fitlme(tab,'y ~ F2 + (F2|Participant) + (1|Stimulus)','FitMethod','REML')
 compare(m3,m2)
 %% 
 % This time, we cannot reject either model according to the likelihood ratio 
 % test, but note that the true (simpler) model m3 is favoured by the lower AIC/BIC 
 % values (these metrics adjust the likelihood by various penalties for the number 
 % of parameters in the model), so we could proceed with inferences based on the 
-% simpler model. 
+% simpler model. Note also that the p-value for the main (fixed) effect of F2 
+% is slightly lower (more significant) in the simpler model, because the residual 
+% dfs are larger.
 % 
 % If you don't know anything about the structure of the error, one approach 
 % is to start with the most complex model, and gradually reduce its complexity 
@@ -1996,14 +2014,14 @@ compare(m3,m2)
 % Note that sometimes (complex) models will not converge, in which case it is 
 % often necessary to assume simpler models. 
 % 
-% Note that the computational expense of LMEs (and occasional convergence problems) 
-% can be an issue when applying over many samples, eg 1e6 voxels in MRI images, 
-% but there are simplified approximations, like the "sandwich estimator".
-%% 
+% Note that the computational expense of LMEs (and occasional convergence 
+% problems) can be an issue when applying over many samples, eg 1e6 voxels in 
+% MRI images, but there are simplified approximations, like the "sandwich estimator".
+% 
 % This concludes this brief introduction to statistics for hypothesis testing. 
 % Any corrections/comments/additions welcomed!
 %% General functions
-
+%%
 function prop = randomise_one_sample(y, num_rand, tails, rand_method, property, critical_value);
 % Estimate probability that some property of a sample is greater (or smaller, if two-tailed)
 % than a critical value using a certain randomisation method.
@@ -2417,7 +2435,7 @@ function [V,W] = estimate_autocorrelation(r)
     W = rsqrtm(pinv(V)); % rsqrtm defined below
 end
 
-function W = rsqrtm(V);
+function W = rsqrtm(V)
 % matrix squareroot ensuring real numbers
     [u,s] = svd(V,0);
     s     = sqrt(abs(diag(s)));

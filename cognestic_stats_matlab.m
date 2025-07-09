@@ -715,7 +715,7 @@ fprintf('Minimum extent for cluster-level FWE correction: %d\n', cs_thr)
 % but for purposes of speed, we estimate from the first sample only:  
 
 %num_samp = 1e4; % reduce if need to speed up
-cluster_defining_Tval = 0.5 % initial cluster-defining height threshold
+%cluster_defining_Tval = 0.5 % initial cluster-defining height threshold
 cs = nan(num_samp,num_tests); cs_thr = [];
 for s = 1:num_samp
     ys = squeeze(y_signal(:,:,s));
@@ -730,21 +730,25 @@ for s = 1:num_samp
 end
 figure,bar(sum(cs)/num_samp), title('Proportion significant using cluster-threshold')
 xlabel('Voxel Number'), ylabel('Proportion of samples'), axis([0 num_tests+1 0 1])
-fprintf('Family-wise positive rate using Cluster-threshold = %4.3f\n',sum(any(cs,2))/num_samp)
+%fprintf('Family-wise positive rate using Cluster-threshold = %4.3f\n',sum(any(cs,2))/num_samp)
 %% 
 % Notice that the diffuse cluster is now detected reasonably well, but the localised 
 % one is not (cf. the case for corrected peak threshold earlier). We are basically 
 % trading-off statistical sensitivity for localising power: with the cluster-level 
 % correction, we are more sensitive (to clusters), but are unable to localise 
 % within clusters (ie cannot claim a particular voxel within a cluster is significant). 
+% The power is not as high as when smoothing the data previously (since smoothing 
+% reduces noise by pooling over nearby voxels), but at least we have fewer false 
+% positives (<5%) for voxels outside the true activation (compare voxels 9 and 
+% 20 with smoothed results above).
 % 
 % _Exercise: Here we have applied to the unsmoothed data with signal, but you 
 % can see what happens for the smoothed data, smooth_y_signal, or the unsmoothed 
-% data with no signal, y (to check FWE), and what happens as you change the initial 
-% cluster-defining height threshold. You can also compare results when the threshold 
-% is calculated for each sample separately (by uncommenting "else" part above), 
-% and examine the range of extent thresholds resulting (cs_thr), but it will take 
-% a long time..._
+% data with no signal, y (to check FWE), or what happens as you change the initial 
+% cluster-defining height threshold (e.g, making lower as in commented code above). 
+% You can also compare results when the threshold is calculated for each sample 
+% separately (by uncommenting the line after "else" above), and examine the range 
+% of extent thresholds resulting (cs_thr), but it will take a long time..._
 % 
 % Note that there are parametric versions that correct FWE for peak or cluster 
 % extent using "Random Field Theory" but they are beyond scope here, and make 
@@ -760,27 +764,36 @@ fprintf('Family-wise positive rate using Cluster-threshold = %4.3f\n',sum(any(cs
 % integrates the cluster masses across a range of thresholds, and is implemented 
 % in the "label_with_cluster_TFCE" function at end (with also allows different 
 % weightings of height and extent).
+% 
+% (Note that we use a set of 3 fixed cluster-defining thresholds, but you could 
+% define a set based on 3 (or more) percentiles of the range of T-values, which 
+% would adjust thresholds to the SNR in the data.)
 
 cm = nan(num_samp,num_tests); cm_thr = []; % cm = cluster mass
+p_range = [0.05 0.01 0.001]; % range of cluster-defining thresholds (could increase)
+T_range = tinv([1-p_range], samp_size-1); %...equivalent T-values
 for s = 1:num_samp
     ys = squeeze(y_signal(:,:,s));
     T = one_t(ys);
-    thrs = prctile(T,[60:10:90]); % range of height thresholds to integrate over
     if s==1 % Faster to estimate from one sample, though TFCE threshold quite variable
-        cm_thr = permute_cluster_metric_one_sample(ys,thrs,alpha,num_rand,'TFCE');
+        cm_thr = permute_cluster_metric_one_sample(ys,T_range,alpha,num_rand,'TFCE');
         %        else
-        %            cm_thr(end+1) = permute_cluster_metric_one_sample(ys,thrs,alpha,num_rand,'TFCE');
+        %            cm_thr(end+1) = permute_cluster_metric_one_sample(ys,T_range,alpha,num_rand,'TFCE');
     end
-    cm(s,:) = label_with_cluster_TFCE(T,thrs);
+    cm(s,:) = label_with_cluster_TFCE(T,T_range);
     cm(s,:) = (cm(s,:) > cm_thr(end));
 end
 figure,bar(sum(cm)/num_samp), title('Proportion significant using TFCE-threshold')
 xlabel('Voxel Number'), ylabel('Proportion of samples'), axis([0 num_tests+1 0 1])
-fprintf('Family-wise positive rate using TFCE-threshold = %4.3f\n',sum(any(cm,2))/num_samp)
+%fprintf('Family-wise positive rate using TFCE-threshold = %4.3f\n',sum(any(cm,2))/num_samp)
 %% 
 % Now we are detecting both the diffuse activation and the localised activation 
-% with reasonable power. Note that, unlike the cs_thr above, the TFCE threshold 
-% varies quite a lot with the data.
+% with reasonable power, which is neat! 
+% 
+% _Exercise: You can also play with H and E to optimise to extent or height, 
+% or if you want a more advanced exercise, you could modify the code above to 
+% handle two-tailed tests, ie possible deactivations (hint: you need to permute 
+% clusters separately for each tail)._
 %% False Discovery Rate
 % Another common correction for multiple comparisons is not to control the FWE, 
 % but rather something called the False Discovery Rate (FDR). In the "Benjamini-Hochberg" 
@@ -2244,7 +2257,7 @@ for thr = thrs
     for c = 1:length(dp)
         ind = sp(c):(ep(c)-1);
         cm = dp(c)^E * x(ind).^H;
-        TFCE(ind) = TFCE(ind) + cm;
+        TFCE(ind) = TFCE(ind) + sum(cm);
     end
 end
 end
